@@ -1,1 +1,12 @@
-const express = require("express"); const fetch = require("node-fetch").default; const app = express(); const PORT = 3000; // Serve static files app.use(express.static("public")); // Proxy for Seed Shop app.get("/api/seed-shop", async (req, res) => { try { const url = https://plantsvsbrainrot.com/api/seed-shop.php?ts=${Date.now()}; const response = await fetch(url); const data = await response.json(); res.json(data); } catch (err) { console.error(err); res.status(500).json({ error: "Failed to fetch seed shop data" }); } }); // Proxy for Gear Shop app.get("/api/gear-shop", async (req, res) => { try { const url = https://plantsvsbrainrot.com/api/gear-shop.php?ts=${Date.now()}; const response = await fetch(url); const data = await response.json(); res.json(data); } catch (err) { console.error(err); res.status(500).json({ error: "Failed to fetch gear shop data" }); } }); app.listen(PORT, () => { console.log(Server running at http://localhost:${PORT}); });
+import fetch from "node-fetch";
+
+export default async function handler(req, res) {
+  try {
+    const response = await fetch(`https://plantsvsbrainrot.com/api/seed-shop.php?ts=${Date.now()}`);
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch seed shop data" });
+  }
+}
