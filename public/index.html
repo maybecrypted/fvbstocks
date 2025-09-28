@@ -295,21 +295,13 @@
       "🥥": "/images/cocotank.png",
       "🪴": "/images/carnivorous_plant.png",
       "🥕": "/images/mr_carrot.png",
-      "🍅": "/images/tomatrio.png",
+      "🍅": "/images/tomatrio.png"
     };
 
     const fruitPriority = {
-      "🌵": 1,
-      "🍓": 2,
-      "🎃": 3,
-      "🌻": 4,
-      "🐉": 5,
-      "🍆": 6,
-      "🍉": 7,
-      "🥥": 8,
-      "🪴": 9,
-      "🥕": 10,
-      "🍅": 11,
+      "🌵": 1, "🍓": 2, "🎃": 3, "🌻": 4,
+      "🐉": 5, "🍆": 6, "🍉": 7, "🥥": 8,
+      "🪴": 9, "🥕": 10, "🍅": 11
     };
 
     const defaultImage = "/images/default.png";
@@ -371,37 +363,13 @@
 
           seedItemsEl.innerHTML = seedItems.map(s => {
             const imgSrc = emojiToImage[s.emoji] || defaultImage;
+            let iconClass = 'item-icon';
+            if (s.emoji === '🍉') iconClass += ' watermelon';
+            else if (s.emoji === '🥥') iconClass += ' cocotank';
+            else if (s.emoji === '🪴') iconClass += ' carnivorous-plant';
+            else if (s.emoji === '🥕') iconClass += ' mr-carrot';
+            else if (s.emoji === '🍅') iconClass += ' tomatrio';
             return `
               <div class="item">
-                <div class="item-icon">
-                  <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                </div>
-                <div class="item-details">
-                  <div class="item-name">${s.name}</div>
-                  <div class="item-quantity">Quantity: ${s.qty}</div>
-                </div>
-              </div>
-            `;
-          }).join('');
-
-          seedCountEl.textContent = `${seedItems.length} items`;
-        }
-
-        updateCountdown();
-      } catch (err) {
-        console.error(err);
-        document.getElementById('seed-items').innerHTML = '<div class="error">Failed to load stock.</div>';
-        document.getElementById('last-updated').textContent = 'Failed to load stock.';
-      }
-    }
-
-    loadStock();
-    setInterval(() => loadStock(false), 10000);
-    setInterval(updateCountdown, 1000);
-
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('last-updated').textContent = 'Loading...';
-    });
-  </script>
-</body>
-</html>
+                <div class="${iconClass}">
+                 
