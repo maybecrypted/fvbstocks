@@ -341,6 +341,21 @@
       countdownEl.textContent = `Last updated: ${new Date(seedData.reportedAt).toLocaleTimeString()} | Next update in: ${minutes}m ${seconds}s`;
       if (minutes === 0 && seconds <= 5 && seconds > 0) isShopUpdate = true;
     }
+    const itemColors = {
+      "🌵": "#22c55e", // cactus green
+      "🍓": "#ef4444", // strawberry red
+      "🎃": "#f59e0b", // pumpkin orange
+      "🌻": "#eab308", // sunflower yellow
+      "🐉": "#a855f7", // dragon fruit purple
+      "🍆": "#7e22ce", // eggplant violet
+      "🍉": "#16a34a", // watermelon green
+      "🍇": "#6366f1", // grape indigo
+      "🥥": "#92400e", // coconut brown
+      "🪴": "#84cc16", // plant lime
+      "🥕": "#fb923c", // carrot orange
+      "🍅": "#dc2626", // tomato red
+      "🍄": "#9333ea", // mushroom purple
+    };
 
     async function loadStock(manualRefresh = false) {
       try {
@@ -371,20 +386,21 @@
             return priorityB - priorityA;
           });
 
-          seedItemsEl.innerHTML = seedItems.map(s => {
-            const imgSrc = emojiToImage[s.emoji] || defaultImage;
-            return `
-              <div class="item">
-                <div class="item-icon">
-                  <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                </div>
-                <div class="item-details">
-                  <div class="item-name">${s.name}</div>
-                  <div class="item-quantity">Quantity: ${s.qty}</div>
-                </div>
+        seedItemsEl.innerHTML = seedItems.map(s => {
+          const imgSrc = emojiToImage[s.emoji] || defaultImage;
+          const color = itemColors[s.emoji] || "#2d2d2d"; // fallback gray
+          return `
+            <div class="item" style="border: 2px solid ${color}">
+              <div class="item-icon">
+                <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
               </div>
-            `;
-          }).join('');
+              <div class="item-details">
+                <div class="item-name">${s.name}</div>
+                <div class="item-quantity">Quantity: ${s.qty}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
 
           seedCountEl.textContent = `${seedItems.length} items`;
         }
