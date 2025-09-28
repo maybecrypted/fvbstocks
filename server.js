@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   try {
-    const response = await fetch(`https://plantsvsbrainrot.com/api/seed-shop.php?ts=${Date.now()}`);
+    const response = await fetch("/api/seed-shop") // works
     const data = await response.json();
     res.status(200).json(data);
   } catch (err) {
