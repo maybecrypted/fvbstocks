@@ -2,8 +2,7 @@
   "name": "fvbstocks",
   "version": "1.0.0",
   "type": "module",
-  "scripts": {},
   "dependencies": {
-    "node-fetch": "^3.4.1"
+    "node-fetch": "^3.3.1"
   }
 }
