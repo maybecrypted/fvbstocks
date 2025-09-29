@@ -477,24 +477,25 @@ function playSoundForItem(emoji) {
                         return priorityB - priorityA;
                     });
 
-                    seedItemsEl.innerHTML = seedItems.map(s => {
-                        const imgSrc = emojiToImage[s.emoji] || defaultImage;
-                        const color = itemColors[s.emoji];
-
-                        playSoundForItem(s.emoji);
-                        
-                        return `
-                        <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
-                            <div class="item-icon">
-                                <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                            </div>
-                            <div class="item-details">
-                                <div class="item-name">${s.name}</div>
-                                <div class="item-quantity">Quantity: ${s.qty}</div>
-                            </div>
-                        </div>
-                        `;
-                    }).join('');
+                seedItemsEl.innerHTML = seedItems.map(s => {
+                  const imgSrc = emojiToImage[s.emoji] || defaultImage;
+                  const color = itemColors[s.emoji];
+                
+                  // Only play sound on automatic refresh
+                  if (!manualRefresh) playSoundForItem(s.emoji);
+                
+                  return `
+                    <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
+                      <div class="item-icon">
+                        <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
+                      </div>
+                      <div class="item-details">
+                        <div class="item-name">${s.name}</div>
+                        <div class="item-quantity">Quantity: ${s.qty}</div>
+                      </div>
+                    </div>
+                  `;
+                }).join('');
 
                     seedCountEl.textContent = `${seedItems.length} items`;
                 }
