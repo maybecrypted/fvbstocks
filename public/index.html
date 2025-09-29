@@ -419,27 +419,30 @@
         }
 
         function updateCountdown() {
-            const nextUpdate = getNextGlobal5MinuteInterval();
-            const now = Date.now();
-            const diff = nextUpdate - now;
-            
-            const countdownEl = document.getElementById('last-updated');
-            const minutes = Math.floor(diff / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            
-            const lastUpdateTime = seedData ? new Date(seedData.reportedAt).toLocaleTimeString() : 'Never';
-            countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
-            
-            // Trigger shop update animation when we're very close
-            if (minutes === 0 && seconds <= 3 && seconds > 0) {
-                isShopUpdate = true;
-            }
-            
-            // Auto-refresh at exact 5-minute intervals
-            if (isExact5MinuteInterval()) {
-                loadStock(false);
-            }
-        }
+    const nextUpdate = getNextGlobal5MinuteInterval();
+    let diff = nextUpdate - Date.now();
+
+    // If we've passed the interval, reset to next one
+    if (diff <= 0) {
+        diff = 5 * 60 * 1000; // reset to 5 minutes
+    }
+
+    const countdownEl = document.getElementById('last-updated');
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+
+    const lastUpdateTime = seedData ? new Date(seedData.reportedAt).toLocaleTimeString() : 'Never';
+    countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
+
+    if (minutes === 0 && seconds <= 3 && seconds > 0) {
+        isShopUpdate = true;
+    }
+
+    if (isExact5MinuteInterval()) {
+        loadStock(false);
+    }
+}
+
 
         async function loadStock(manualRefresh = false) {
             try {
