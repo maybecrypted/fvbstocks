@@ -394,6 +394,9 @@
             
             const now = new Date();
             const minutes = now.getUTCMinutes();
+            const seconds = now.getUTCSeconds();
+            
+            // Calculate next 5-minute interval + 10 seconds
             const nextMinutes = 5 * Math.ceil(minutes / 5);
             const next = new Date(Date.UTC(
                 now.getUTCFullYear(),
@@ -401,9 +404,15 @@
                 now.getUTCDate(),
                 now.getUTCHours(),
                 nextMinutes,
-                0, 0
+                10, // Set to 10 seconds
+                0
             ));
-            if (next <= now) next.setUTCMinutes(next.getUTCMinutes() + 5);
+            
+            // If we're past the next update time, add 5 more minutes
+            if (next <= now) {
+                next.setUTCMinutes(next.getUTCMinutes() + 5);
+            }
+            
             return next.getTime();
         }
 
@@ -437,9 +446,23 @@
                 
                 if (seedJson.reportedAt) {
                     const reportedTime = new Date(seedJson.reportedAt).getTime();
-                    const minutesSinceUpdate = Math.floor((Date.now() - reportedTime) / (60 * 1000));
-                    const minutesToNext = 5 - (minutesSinceUpdate % 5);
-                    serverUpdateTime = reportedTime + (minutesToNext * 60 * 1000);
+                    // Calculate the next update time based on 5-minute intervals + 10 seconds
+                    const reportedDate = new Date(reportedTime);
+                    const minutes = reportedDate.getUTCMinutes();
+                    const nextIntervalMinutes = 5 * Math.ceil(minutes / 5);
+                    const nextUpdateDate = new Date(Date.UTC(
+                        reportedDate.getUTCFullYear(),
+                        reportedDate.getUTCMonth(),
+                        reportedDate.getUTCDate(),
+                        reportedDate.getUTCHours(),
+                        nextIntervalMinutes,
+                        10, // 10 seconds past the interval
+                        0
+                    ));
+                    if (nextUpdateDate <= reportedDate) {
+                        nextUpdateDate.setUTCMinutes(nextUpdateDate.getUTCMinutes() + 5);
+                    }
+                    serverUpdateTime = nextUpdateDate.getTime();
                 }
                 
                 let seedItems = seedJson?.seeds || [];
