@@ -383,38 +383,44 @@
 
 function getNextUpdateTime() {
     const now = new Date();
-    const minutes = now.getMinutes();
-    const remainder = minutes % 5;
-    const nextMinutes = minutes + (5 - remainder);
+    const remainder = now.getMinutes() % 5;
     const nextUpdate = new Date(now);
-    nextUpdate.setMinutes(nextMinutes);
+    nextUpdate.setMinutes(now.getMinutes() + (5 - remainder));
     nextUpdate.setSeconds(10);
     nextUpdate.setMilliseconds(0);
     if (nextUpdate <= now) nextUpdate.setMinutes(nextUpdate.getMinutes() + 5);
-    return nextUpdate.getTime();
+    return nextUpdate;
+}
+
+function formatTime(date) {
+    return date.toTimeString().split(' ')[0]; // HH:MM:SS exact
 }
 
 function scheduleNextUpdate() {
     const nextUpdate = getNextUpdateTime();
     const diff = nextUpdate - Date.now();
-
     const countdownEl = document.getElementById('last-updated');
+
     const interval = setInterval(() => {
         const remaining = nextUpdate - Date.now();
         const mins = Math.floor(remaining / 60000);
         const secs = Math.floor((remaining % 60000) / 1000);
-        const lastUpdateTime = seedData?.reportedAt ? new Date(seedData.reportedAt).toLocaleTimeString() : "N/A";
+        const lastUpdateTime = seedData?.reportedAt ? formatTime(new Date(seedData.reportedAt)) : "N/A";
         countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${mins}m ${secs}s`;
-    }, 1000);
+    }, 250); // faster to reduce drift
 
-    setTimeout(() => {
+    setTimeout(async () => {
         clearInterval(interval);
-        loadStock();
+        await loadStock();
         scheduleNextUpdate();
     }, diff);
 }
 
-scheduleNextUpdate();
+// Start only after page is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    scheduleNextUpdate();
+});
+
 
 
         document.addEventListener('DOMContentLoaded', () => {
