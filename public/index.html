@@ -294,6 +294,7 @@
         let audioEnabled = false;
         let serverUpdateTime = null;
         let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
+        let lastShopResetTime = null;
 
         const emojiToImage = {
             "🌵": "/images/cactus.png",
@@ -376,6 +377,16 @@
             audio.play().catch(e => console.warn("Sound blocked:", e));
         }
 
+        function isShopResetTime() {
+            if (!serverUpdateTime) return false;
+            
+            const now = Date.now();
+            const timeSinceLastReset = now - serverUpdateTime;
+            
+            // Check if we're within 30 seconds of a shop reset (5-minute intervals)
+            return timeSinceLastReset >= 0 && timeSinceLastReset <= 30000;
+        }
+
         function getNextShopUpdate() {
             if (serverUpdateTime) {
                 const now = Date.now();
@@ -434,6 +445,21 @@
                     const minutesSinceUpdate = Math.floor((Date.now() - reportedTime) / (60 * 1000));
                     const minutesToNext = 5 - (minutesSinceUpdate % 5);
                     serverUpdateTime = reportedTime + (minutesToNext * 60 * 1000);
+                    
+                    // Check if this is a shop reset (every 5 minutes)
+                    const currentResetTime = Math.floor(reportedTime / serverUpdateInterval) * serverUpdateInterval;
+                    if (lastShopResetTime !== currentResetTime) {
+                        lastShopResetTime = currentResetTime;
+                        // This is a new shop reset - play sounds for items
+                        if (audioEnabled && !manualRefresh) {
+                            setTimeout(() => {
+                                const seedItems = seedJson?.seeds || [];
+                                seedItems.forEach(item => {
+                                    setTimeout(() => playSoundForItem(item.emoji), Math.random() * 2000);
+                                });
+                            }, 500);
+                        }
+                    }
                 }
                 
                 let seedItems = seedJson?.seeds || [];
@@ -454,8 +480,6 @@
                     seedItemsEl.innerHTML = seedItems.map(s => {
                         const imgSrc = emojiToImage[s.emoji] || defaultImage;
                         const color = itemColors[s.emoji];
-
-                        playSoundForItem(s.emoji);
                         
                         return `
                         <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
