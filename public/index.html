@@ -290,11 +290,9 @@
 
     <script>
         let seedData = null;
-        let previousSeedItems = new Set(); // Track previous stock items
+        let previousSeedItems = new Set();
         let isShopUpdate = false;
         let audioEnabled = false;
-        let serverUpdateTime = null;
-        let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
 
         const emojiToImage = {
             "🌵": "/images/cactus.png",
@@ -377,41 +375,43 @@
         }
 
         function getNextShopUpdate() {
-            if (serverUpdateTime) {
-                const now = Date.now();
-                let nextUpdate = serverUpdateTime;
-                
-                while (nextUpdate <= now) {
-                    nextUpdate += serverUpdateInterval;
-                }
-                return nextUpdate;
-            }
-            
             const now = new Date();
-            const minutes = now.getUTCMinutes();
-            const nextMinutes = 5 * Math.ceil(minutes / 5);
-            const next = new Date(Date.UTC(
-                now.getUTCFullYear(),
-                now.getUTCMonth(),
-                now.getUTCDate(),
-                now.getUTCHours(),
-                nextMinutes,
-                0, 0
-            ));
-            if (next <= now) next.setUTCMinutes(next.getUTCMinutes() + 5);
-            return next.getTime();
+            const utcNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
+            
+            // Get current UTC minutes
+            const currentMinutes = utcNow.getUTCMinutes();
+            
+            // Calculate next 5-minute boundary (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
+            const nextMinutes = Math.ceil((currentMinutes + 1) / 5) * 5;
+            
+            // Create next update time
+            const nextUpdate = new Date(utcNow);
+            nextUpdate.setUTCMinutes(nextMinutes, 0, 0); // Set seconds and milliseconds to 0
+            
+            // If we've gone past the hour, it will automatically roll over
+            return nextUpdate.getTime();
         }
 
         function updateCountdown() {
             if (!seedData) return;
-            const diff = getNextShopUpdate() - Date.now();
+            
+            const nextUpdateTime = getNextShopUpdate();
+            const diff = nextUpdateTime - Date.now();
             const countdownEl = document.getElementById('last-updated');
+            
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+            
+            const lastUpdateTime = seedData.reportedAt ? 
+                new Date(seedData.reportedAt).toLocaleTimeString() : 
+                'Unknown';
+            
             countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
             
-            if (minutes === 0 && seconds <= 5 && seconds > 0) isShopUpdate = true;
+            // Trigger shop update animation when close to update time
+            if (minutes === 0 && seconds <= 5 && seconds > 0) {
+                isShopUpdate = true;
+            }
         }
 
         async function loadStock(manualRefresh = false) {
@@ -428,39 +428,30 @@
                 const seedRes = await fetch("/api/seed-shop");
                 const seedJson = await seedRes.json();
                 seedData = seedJson;
-                
-                if (seedJson.reportedAt) {
-                    const reportedTime = new Date(seedJson.reportedAt).getTime();
-                    const minutesSinceUpdate = Math.floor((Date.now() - reportedTime) / (60 * 1000));
-                    const minutesToNext = 5 - (minutesSinceUpdate % 5);
-                    serverUpdateTime = reportedTime + (minutesToNext * 60 * 1000);
-                }
-                
+
                 let seedItems = seedJson?.seeds || [];
                 const seedItemsEl = document.getElementById('seed-items');
                 const seedCountEl = document.getElementById('seed-count');
-                
+
                 if (seedItems.length === 0) {
                     seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
                     seedCountEl.textContent = '0 items';
                     previousSeedItems.clear();
                 } else {
-                    // Create current items set for comparison
                     const currentSeedItems = new Set(seedItems.map(s => s.emoji));
                     
-                    // Find new items (items that weren't in previous stock)
-                    const newItems = seedItems.filter(s => !previousSeedItems.has(s.emoji));
-                    
-                    // Play sounds only for new items (and only if not a manual refresh)
-                    if (!manualRefresh && newItems.length > 0) {
-                        newItems.forEach(item => {
-                            playSoundForNewItem(item.emoji);
+                    if (!manualRefresh) {
+                        // Check for new items and play sounds
+                        seedItems.forEach(item => {
+                            if (!previousSeedItems.has(item.emoji)) {
+                                playSoundForNewItem(item.emoji);
+                            }
                         });
                     }
                     
                     // Update previous items set
                     previousSeedItems = currentSeedItems;
-                    
+
                     seedItems = seedItems.sort((a, b) => {
                         const priorityA = fruitPriority[a.emoji] || 0;
                         const priorityB = fruitPriority[b.emoji] || 0;
@@ -483,8 +474,10 @@
                         </div>
                         `;
                     }).join('');
+                    
                     seedCountEl.textContent = `${seedItems.length} items`;
                 }
+
                 updateCountdown();
             } catch (err) {
                 console.error(err);
