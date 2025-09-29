@@ -239,7 +239,7 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
+        
         @keyframes slideInLeft {
             from { opacity: 0; transform: translateX(-20px); }
             to { opacity: 1; transform: translateX(0); }
@@ -290,9 +290,10 @@
 
     <script>
         let seedData = null;
-        let previousSeedItems = new Set();
         let isShopUpdate = false;
         let audioEnabled = false;
+        let serverUpdateTime = null;
+        let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
 
         const emojiToImage = {
             "🌵": "/images/cactus.png",
@@ -352,6 +353,8 @@
             "🍄": "/sounds/shroombino.mp3",
         };
 
+        let soundedItems = new Set();
+
         function enableAudio() {
             audioEnabled = true;
             const button = document.getElementById('enable-audio-btn');
@@ -362,59 +365,62 @@
             const audio = new Audio();
             audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
             audio.play().catch(() => {});
+            
+            // Clear sounded items so sounds can play again
+            soundedItems.clear();
         }
 
-        function playSoundForNewItem(emoji) {
+        function playSoundForItem(emoji) {
             if (!audioEnabled) return;
             
             const soundSrc = emojiSounds[emoji];
-            if (!soundSrc) return;
-            
+            if (!soundSrc || soundedItems.has(emoji)) return;
+
             const audio = new Audio(soundSrc);
             audio.play().catch(e => console.warn("Sound blocked:", e));
+            soundedItems.add(emoji);
         }
 
         function getNextShopUpdate() {
+            if (serverUpdateTime) {
+                const now = Date.now();
+                let nextUpdate = serverUpdateTime;
+                
+                while (nextUpdate <= now) {
+                    nextUpdate += serverUpdateInterval;
+                }
+                return nextUpdate;
+            }
+            
             const now = new Date();
-            const utcNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
-            
-            // Get current UTC minutes
-            const currentMinutes = utcNow.getUTCMinutes();
-            
-            // Calculate next 5-minute boundary (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
-            const nextMinutes = Math.ceil((currentMinutes + 1) / 5) * 5;
-            
-            // Create next update time
-            const nextUpdate = new Date(utcNow);
-            nextUpdate.setUTCMinutes(nextMinutes, 0, 0); // Set seconds and milliseconds to 0
-            
-            // If we've gone past the hour, it will automatically roll over
-            return nextUpdate.getTime();
+            const minutes = now.getUTCMinutes();
+            const nextMinutes = 5 * Math.ceil(minutes / 5);
+            const next = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                now.getUTCHours(),
+                nextMinutes,
+                0, 0
+            ));
+            if (next <= now) next.setUTCMinutes(next.getUTCMinutes() + 5);
+            return next.getTime();
         }
 
         function updateCountdown() {
             if (!seedData) return;
-            
-            const nextUpdateTime = getNextShopUpdate();
-            const diff = nextUpdateTime - Date.now();
+            const diff = getNextShopUpdate() - Date.now();
             const countdownEl = document.getElementById('last-updated');
-            
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            
-            const lastUpdateTime = seedData.reportedAt ? 
-                new Date(seedData.reportedAt).toLocaleTimeString() : 
-                'Unknown';
-            
+            const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
             countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
             
-            // Trigger shop update animation when close to update time
-            if (minutes === 0 && seconds <= 5 && seconds > 0) {
-                isShopUpdate = true;
-            }
+            if (minutes === 0 && seconds <= 5 && seconds > 0) isShopUpdate = true;
         }
 
         async function loadStock(manualRefresh = false) {
+            if (manualRefresh) soundedItems.clear();
             try {
                 const refreshBtn = document.querySelector('.refresh-btn');
                 if (isShopUpdate && !manualRefresh) {
@@ -428,30 +434,23 @@
                 const seedRes = await fetch("/api/seed-shop");
                 const seedJson = await seedRes.json();
                 seedData = seedJson;
-
+                
+                if (seedJson.reportedAt) {
+                    const reportedTime = new Date(seedJson.reportedAt).getTime();
+                    const minutesSinceUpdate = Math.floor((Date.now() - reportedTime) / (60 * 1000));
+                    const minutesToNext = 5 - (minutesSinceUpdate % 5);
+                    serverUpdateTime = reportedTime + (minutesToNext * 60 * 1000);
+                }
+                
                 let seedItems = seedJson?.seeds || [];
+
                 const seedItemsEl = document.getElementById('seed-items');
                 const seedCountEl = document.getElementById('seed-count');
 
                 if (seedItems.length === 0) {
                     seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
                     seedCountEl.textContent = '0 items';
-                    previousSeedItems.clear();
                 } else {
-                    const currentSeedItems = new Set(seedItems.map(s => s.emoji));
-                    
-                    if (!manualRefresh) {
-                        // Check for new items and play sounds
-                        seedItems.forEach(item => {
-                            if (!previousSeedItems.has(item.emoji)) {
-                                playSoundForNewItem(item.emoji);
-                            }
-                        });
-                    }
-                    
-                    // Update previous items set
-                    previousSeedItems = currentSeedItems;
-
                     seedItems = seedItems.sort((a, b) => {
                         const priorityA = fruitPriority[a.emoji] || 0;
                         const priorityB = fruitPriority[b.emoji] || 0;
@@ -461,6 +460,8 @@
                     seedItemsEl.innerHTML = seedItems.map(s => {
                         const imgSrc = emojiToImage[s.emoji] || defaultImage;
                         const color = itemColors[s.emoji];
+
+                        playSoundForItem(s.emoji);
                         
                         return `
                         <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
@@ -474,7 +475,7 @@
                         </div>
                         `;
                     }).join('');
-                    
+
                     seedCountEl.textContent = `${seedItems.length} items`;
                 }
 
