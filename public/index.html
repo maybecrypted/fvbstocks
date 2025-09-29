@@ -85,7 +85,6 @@
             height: 0;
             background: rgba(255, 255, 255, 0.1);
             transform: translate(-50%, -50%);
-            transition: all 0.3s ease;
         }
 
         .refresh-btn:hover::before, .enable-audio-btn:hover::before {
@@ -240,7 +239,7 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
         @keyframes slideInLeft {
             from { opacity: 0; transform: translateX(-20px); }
             to { opacity: 1; transform: translateX(0); }
@@ -291,14 +290,11 @@
 
     <script>
         let seedData = null;
+        let previousSeedItems = new Set(); // Track previous stock items
         let isShopUpdate = false;
         let audioEnabled = false;
         let serverUpdateTime = null;
         let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-        // Track previous stock to detect new items
-        let previousStock = new Set();
-        let soundedItems = new Set();
 
         const emojiToImage = {
             "🌵": "/images/cactus.png",
@@ -375,7 +371,7 @@
             
             const soundSrc = emojiSounds[emoji];
             if (!soundSrc) return;
-
+            
             const audio = new Audio(soundSrc);
             audio.play().catch(e => console.warn("Sound blocked:", e));
         }
@@ -441,28 +437,30 @@
                 }
                 
                 let seedItems = seedJson?.seeds || [];
-                
-                // Create current stock set for comparison
-                const currentStock = new Set(seedItems.map(item => item.emoji));
-                
-                // Find new items (items that weren't in previous stock)
-                const newItems = seedItems.filter(item => !previousStock.has(item.emoji));
-                
-                // Play sounds only for new items
-                newItems.forEach(item => {
-                    playSoundForNewItem(item.emoji);
-                });
-                
-                // Update previous stock for next comparison
-                previousStock = new Set(currentStock);
-
                 const seedItemsEl = document.getElementById('seed-items');
                 const seedCountEl = document.getElementById('seed-count');
-
+                
                 if (seedItems.length === 0) {
                     seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
                     seedCountEl.textContent = '0 items';
+                    previousSeedItems.clear();
                 } else {
+                    // Create current items set for comparison
+                    const currentSeedItems = new Set(seedItems.map(s => s.emoji));
+                    
+                    // Find new items (items that weren't in previous stock)
+                    const newItems = seedItems.filter(s => !previousSeedItems.has(s.emoji));
+                    
+                    // Play sounds only for new items (and only if not a manual refresh)
+                    if (!manualRefresh && newItems.length > 0) {
+                        newItems.forEach(item => {
+                            playSoundForNewItem(item.emoji);
+                        });
+                    }
+                    
+                    // Update previous items set
+                    previousSeedItems = currentSeedItems;
+                    
                     seedItems = seedItems.sort((a, b) => {
                         const priorityA = fruitPriority[a.emoji] || 0;
                         const priorityB = fruitPriority[b.emoji] || 0;
@@ -485,10 +483,8 @@
                         </div>
                         `;
                     }).join('');
-
                     seedCountEl.textContent = `${seedItems.length} items`;
                 }
-
                 updateCountdown();
             } catch (err) {
                 console.error(err);
