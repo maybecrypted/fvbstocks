@@ -233,32 +233,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
-    .rainbow-border {
-      position: relative;
-      border-radius: 0.5rem;
-      padding: 0.875rem;
-      overflow: hidden;
-    }
-    
-    .rainbow-border::before {
-      content: "";
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      border-radius: 0.5rem;
-      background: conic-gradient(red, orange, yellow, green, blue, indigo, violet, red);
-      z-index: -1;
-      animation: rotateRainbow 3s linear infinite;
-    }
-    
-    @keyframes rotateRainbow {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-
     @keyframes slideInLeft {
       from { opacity: 0; transform: translateX(-20px); }
       to { opacity: 1; transform: translateX(0); }
@@ -341,14 +315,13 @@
     };
 
     const itemColors = {
-      "🌵": "rainbow", // watermelon green
       "🍉": "#e22bd0", // watermelon green
       "🍇": "#e22bd0", // grape indigo
-      "🥥": "#92400e", // coconut brown
-      "🪴": "#84cc16", // plant lime
-      "🥕": "#fb923c", // carrot orange
-      "🍅": "#dc2626", // tomato red
-      "🍄": "#9333ea", // mushroom purple
+      "🥥": "#FFD700", // coconut brown
+      "🪴": "#FFD700", // plant lime
+      "🥕": "#C0C0C0", // carrot orange
+      "🍅": "#C0C0C0", // tomato red
+      "🍄": "#C0C0C0", // mushroom purple
     };
 
     const defaultImage = "/images/default.png";
@@ -412,32 +385,19 @@
           const imgSrc = emojiToImage[s.emoji] || defaultImage;
           const color = itemColors[s.emoji] || "#2d2d2d";
         
-          if (color === "rainbow") {
-            return `
-              <div class="item rainbow-border">
-                <div class="item-icon">
-                  <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                </div>
-                <div class="item-details">
-                  <div class="item-name">${s.name}</div>
-                  <div class="item-quantity">Quantity: ${s.qty}</div>
-                </div>
+          return `
+            <div class="item" style="border: 2px solid ${color}; box-shadow: 0 0 8px ${color};">
+              <div class="item-icon">
+                <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
               </div>
-            `;
-          } else {
-            return `
-              <div class="item" style="border: 2px solid ${color}; box-shadow: 0 0 8px ${color};">
-                <div class="item-icon">
-                  <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                </div>
-                <div class="item-details">
-                  <div class="item-name">${s.name}</div>
-                  <div class="item-quantity">Quantity: ${s.qty}</div>
-                </div>
+              <div class="item-details">
+                <div class="item-name">${s.name}</div>
+                <div class="item-quantity">Quantity: ${s.qty}</div>
               </div>
-            `;
-          }
+            </div>
+          `;
         }).join('');
+
 
           seedCountEl.textContent = `${seedItems.length} items`;
         }
