@@ -271,7 +271,6 @@
             <div class="controls">
                 <span id="last-updated">Loading...</span>
                 <button class="refresh-btn" onclick="loadStock(true)">Refresh</button>
-                 Added enable sounds button 
                 <button class="enable-audio-btn" id="enable-audio-btn" onclick="enableAudio()">🔊 Enable Sounds</button>
             </div>
         </div>
@@ -293,6 +292,8 @@
         let seedData = null;
         let isShopUpdate = false;
         let audioEnabled = false;
+        let serverUpdateTime = null;
+        let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
 
         const emojiToImage = {
             "🌵": "/images/cactus.png",
@@ -381,6 +382,16 @@
         }
 
         function getNextShopUpdate() {
+            if (serverUpdateTime) {
+                const now = Date.now();
+                let nextUpdate = serverUpdateTime;
+                
+                while (nextUpdate <= now) {
+                    nextUpdate += serverUpdateInterval;
+                }
+                return nextUpdate;
+            }
+            
             const now = new Date();
             const minutes = now.getUTCMinutes();
             const nextMinutes = 5 * Math.ceil(minutes / 5);
@@ -402,7 +413,9 @@
             const countdownEl = document.getElementById('last-updated');
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            countdownEl.textContent = `Last updated: ${new Date(seedData.reportedAt).toLocaleTimeString()} | Next update in: ${minutes}m ${seconds}s`;
+            const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+            countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
+            
             if (minutes === 0 && seconds <= 5 && seconds > 0) isShopUpdate = true;
         }
 
@@ -421,6 +434,14 @@
                 const seedRes = await fetch("/api/seed-shop");
                 const seedJson = await seedRes.json();
                 seedData = seedJson;
+                
+                if (seedJson.reportedAt) {
+                    const reportedTime = new Date(seedJson.reportedAt).getTime();
+                    const minutesSinceUpdate = Math.floor((Date.now() - reportedTime) / (60 * 1000));
+                    const minutesToNext = 5 - (minutesSinceUpdate % 5);
+                    serverUpdateTime = reportedTime + (minutesToNext * 60 * 1000);
+                }
+                
                 let seedItems = seedJson?.seeds || [];
 
                 const seedItemsEl = document.getElementById('seed-items');
