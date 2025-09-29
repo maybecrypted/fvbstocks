@@ -407,14 +407,15 @@ function scheduleNextUpdate() {
         const secs = Math.floor((remaining % 60000) / 1000);
         const lastUpdateTime = seedData?.reportedAt ? formatTime(new Date(seedData.reportedAt)) : "N/A";
         countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${mins}m ${secs}s`;
-    }, 250); // faster to reduce drift
+    }, 250);
 
-    setTimeout(async () => {
+    setTimeout(() => {
         clearInterval(interval);
-        await loadStock();
+        loadStock(true); // just call normally
         scheduleNextUpdate();
     }, diff);
 }
+
 
 // Start only after page is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
