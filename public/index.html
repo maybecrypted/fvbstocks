@@ -377,26 +377,41 @@
             audio.play().catch(e => console.warn("Sound blocked:", e));
         }
 
-        // Get the next exact 5-minute interval (1:15, 1:20, 1:25, etc.)
-        function getNextGlobal5MinuteInterval() {
-            const now = new Date();
-            const currentMinutes = now.getUTCMinutes();
-            const currentSeconds = now.getUTCSeconds();
-            const currentMs = now.getUTCMilliseconds();
-            
-            // Calculate next 5-minute mark (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
-            const nextInterval = Math.ceil(currentMinutes / 5) * 5;
-            
-            // Create next update time
-            const nextUpdate = new Date(Date.UTC(
-                now.getUTCFullYear(),
-                now.getUTCMonth(),
-                now.getUTCDate(),
-                now.getUTCHours(),
-                nextInterval,
-                0, // seconds
-                0  // milliseconds
-            ));
+// Get the next refresh point: either exact 5-minute mark or 10s after it
+function getNextRefreshPoint() {
+    const now = new Date();
+    const currentMinutes = now.getUTCMinutes();
+    const currentSeconds = now.getUTCSeconds();
+
+    const nextIntervalMinute = Math.ceil(currentMinutes / 5) * 5;
+
+    let baseUpdate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        now.getUTCHours(),
+        nextIntervalMinute,
+        0, 0
+    ));
+
+    if (nextIntervalMinute >= 60) {
+        baseUpdate.setUTCHours(baseUpdate.getUTCHours() + 1);
+        baseUpdate.setUTCMinutes(0);
+    }
+
+    // If we're exactly at the 5-min mark or just passed it,
+    // schedule the "+10 seconds" refresh
+    if (now.getTime() >= baseUpdate.getTime() && currentSeconds < 10) {
+        return baseUpdate.getTime() + 10000; // 10s later
+    }
+
+    // If we're already past +10s, go to the next 5-minute mark
+    if (now.getTime() >= baseUpdate.getTime() + 10000) {
+        baseUpdate.setUTCMinutes(baseUpdate.getUTCMinutes() + 5);
+    }
+
+    return baseUpdate.getTime();
+}
             
             // If we've passed the hour, move to next hour
             if (nextInterval >= 60) {
@@ -419,13 +434,10 @@
         }
 
         function updateCountdown() {
-    const nextUpdate = getNextGlobal5MinuteInterval();
+    const nextUpdate = getNextRefreshPoint();
     let diff = nextUpdate - Date.now();
 
-    // If we've passed the interval, reset to next one
-    if (diff <= 0) {
-        diff = 5 * 60 * 1000; // reset to 5 minutes
-    }
+    if (diff < 0) diff = 0; // safety clamp
 
     const countdownEl = document.getElementById('last-updated');
     const minutes = Math.floor(diff / 60000);
@@ -438,7 +450,7 @@
         isShopUpdate = true;
     }
 
-    if (isExact5MinuteInterval()) {
+    if (diff === 0) {
         loadStock(false);
     }
 }
