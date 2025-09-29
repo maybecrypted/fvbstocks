@@ -377,50 +377,34 @@
             audio.play().catch(e => console.warn("Sound blocked:", e));
         }
 
-// Get the next refresh point: either exact 5-minute mark or 10s after it
 function getNextRefreshPoint() {
     const now = new Date();
-    const currentMinutes = now.getUTCMinutes();
-    const currentSeconds = now.getUTCSeconds();
 
-    const nextIntervalMinute = Math.ceil(currentMinutes / 5) * 5;
-
-    let baseUpdate = new Date(Date.UTC(
+    // Round down to the last 5-min boundary
+    const lastBoundary = new Date(Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
         now.getUTCDate(),
         now.getUTCHours(),
-        nextIntervalMinute,
+        Math.floor(now.getUTCMinutes() / 5) * 5,
         0, 0
     ));
 
-    if (nextIntervalMinute >= 60) {
-        baseUpdate.setUTCHours(baseUpdate.getUTCHours() + 1);
-        baseUpdate.setUTCMinutes(0);
-    }
+    const boundaryTime = lastBoundary.getTime();
+    const plus10sTime = boundaryTime + 10000;
 
-    // If we're exactly at the 5-min mark or just passed it,
-    // schedule the "+10 seconds" refresh
-    if (now.getTime() >= baseUpdate.getTime() && currentSeconds < 10) {
-        return baseUpdate.getTime() + 10000; // 10s later
+    if (now.getTime() < boundaryTime) {
+        // Haven’t reached boundary yet → next is boundary
+        return boundaryTime;
+    } else if (now.getTime() >= boundaryTime && now.getTime() < plus10sTime) {
+        // We're within the first 10s window → schedule +10s
+        return plus10sTime;
+    } else {
+        // Past +10s → schedule the next 5-min boundary
+        return boundaryTime + 5 * 60 * 1000;
     }
-
-    // If we're already past +10s, go to the next 5-minute mark
-    if (now.getTime() >= baseUpdate.getTime() + 10000) {
-        baseUpdate.setUTCMinutes(baseUpdate.getUTCMinutes() + 5);
-    }
-
-    return baseUpdate.getTime();
 }
-            
-            // If we've passed the hour, move to next hour
-            if (nextInterval >= 60) {
-                nextUpdate.setUTCHours(nextUpdate.getUTCHours() + 1);
-                nextUpdate.setUTCMinutes(0);
-            }
-            
-            return nextUpdate.getTime();
-        }
+
 
         // Check if we're at an exact 5-minute interval
         function isExact5MinuteInterval() {
