@@ -292,9 +292,9 @@
         let seedData = null;
         let isShopUpdate = false;
         let audioEnabled = false;
-        let serverUpdateTime = null;
-        let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
         let lastShopResetTime = null;
+        let countdownInterval = null;
+        let loadInterval = null;
 
         const emojiToImage = {
             "🌵": "/images/cactus.png",
@@ -377,52 +377,68 @@
             audio.play().catch(e => console.warn("Sound blocked:", e));
         }
 
-        function isShopResetTime() {
-            if (!serverUpdateTime) return false;
-            
-            const now = Date.now();
-            const timeSinceLastReset = now - serverUpdateTime;
-            
-            // Check if we're within 30 seconds of a shop reset (5-minute intervals)
-            return timeSinceLastReset >= 0 && timeSinceLastReset <= 30000;
-        }
-
-        function getNextShopUpdate() {
-            if (serverUpdateTime) {
-                const now = Date.now();
-                let nextUpdate = serverUpdateTime;
-                
-                while (nextUpdate <= now) {
-                    nextUpdate += serverUpdateInterval;
-                }
-                return nextUpdate;
-            }
-            
+        // Get the next exact 5-minute interval (1:15, 1:20, 1:25, etc.)
+        function getNextGlobal5MinuteInterval() {
             const now = new Date();
-            const minutes = now.getUTCMinutes();
-            const nextMinutes = 5 * Math.ceil(minutes / 5);
-            const next = new Date(Date.UTC(
+            const currentMinutes = now.getUTCMinutes();
+            const currentSeconds = now.getUTCSeconds();
+            const currentMs = now.getUTCMilliseconds();
+            
+            // Calculate next 5-minute mark (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
+            const nextInterval = Math.ceil(currentMinutes / 5) * 5;
+            
+            // Create next update time
+            const nextUpdate = new Date(Date.UTC(
                 now.getUTCFullYear(),
                 now.getUTCMonth(),
                 now.getUTCDate(),
                 now.getUTCHours(),
-                nextMinutes,
-                0, 0
+                nextInterval,
+                0, // seconds
+                0  // milliseconds
             ));
-            if (next <= now) next.setUTCMinutes(next.getUTCMinutes() + 5);
-            return next.getTime();
+            
+            // If we've passed the hour, move to next hour
+            if (nextInterval >= 60) {
+                nextUpdate.setUTCHours(nextUpdate.getUTCHours() + 1);
+                nextUpdate.setUTCMinutes(0);
+            }
+            
+            return nextUpdate.getTime();
+        }
+
+        // Check if we're at an exact 5-minute interval
+        function isExact5MinuteInterval() {
+            const now = new Date();
+            const minutes = now.getUTCMinutes();
+            const seconds = now.getUTCSeconds();
+            const milliseconds = now.getUTCMilliseconds();
+            
+            // Check if minutes are divisible by 5 and we're at exactly 0 seconds, 0 milliseconds
+            return (minutes % 5 === 0) && seconds === 0 && milliseconds < 100;
         }
 
         function updateCountdown() {
-            if (!seedData) return;
-            const diff = getNextShopUpdate() - Date.now();
+            const nextUpdate = getNextGlobal5MinuteInterval();
+            const now = Date.now();
+            const diff = nextUpdate - now;
+            
             const countdownEl = document.getElementById('last-updated');
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+            
+            const lastUpdateTime = seedData ? new Date(seedData.reportedAt).toLocaleTimeString() : 'Never';
             countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
             
-            if (minutes === 0 && seconds <= 5 && seconds > 0) isShopUpdate = true;
+            // Trigger shop update animation when we're very close
+            if (minutes === 0 && seconds <= 3 && seconds > 0) {
+                isShopUpdate = true;
+            }
+            
+            // Auto-refresh at exact 5-minute intervals
+            if (isExact5MinuteInterval()) {
+                loadStock(false);
+            }
         }
 
         async function loadStock(manualRefresh = false) {
@@ -440,14 +456,11 @@
                 const seedJson = await seedRes.json();
                 seedData = seedJson;
                 
+                // Check if this is a new shop reset
                 if (seedJson.reportedAt) {
                     const reportedTime = new Date(seedJson.reportedAt).getTime();
-                    const minutesSinceUpdate = Math.floor((Date.now() - reportedTime) / (60 * 1000));
-                    const minutesToNext = 5 - (minutesSinceUpdate % 5);
-                    serverUpdateTime = reportedTime + (minutesToNext * 60 * 1000);
+                    const currentResetTime = Math.floor(reportedTime / (5 * 60 * 1000)) * (5 * 60 * 1000);
                     
-                    // Check if this is a shop reset (every 5 minutes)
-                    const currentResetTime = Math.floor(reportedTime / serverUpdateInterval) * serverUpdateInterval;
                     if (lastShopResetTime !== currentResetTime) {
                         lastShopResetTime = currentResetTime;
                         // This is a new shop reset - play sounds for items
@@ -497,7 +510,6 @@
                     seedCountEl.textContent = `${seedItems.length} items`;
                 }
 
-                updateCountdown();
             } catch (err) {
                 console.error(err);
                 document.getElementById('seed-items').innerHTML = '<div class="error">Failed to load stock.</div>';
@@ -505,9 +517,26 @@
             }
         }
 
+        // Initialize precise timing system
+        function initializePreciseTimer() {
+            // Clear any existing intervals
+            if (countdownInterval) clearInterval(countdownInterval);
+            if (loadInterval) clearInterval(loadInterval);
+            
+            // Update countdown every second with precise timing
+            countdownInterval = setInterval(updateCountdown, 1000);
+            
+            // Also check for exact intervals more frequently to catch precise moments
+            setInterval(() => {
+                if (isExact5MinuteInterval()) {
+                    loadStock(false);
+                }
+            }, 100); // Check every 100ms for precision
+        }
+
+        // Initial load and timer setup
         loadStock();
-        setInterval(() => loadStock(false), 10000);
-        setInterval(updateCountdown, 1000);
+        initializePreciseTimer();
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('last-updated').textContent = 'Loading...';
