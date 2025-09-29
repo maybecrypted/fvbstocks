@@ -343,239 +343,219 @@
         </div>
     </div>
 
-    <script>
-        let seedData = null;
-        let isShopUpdate = false;
-        let audioEnabled = false;
-        let serverUpdateTime = null;
-        let serverUpdateInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
+   <script>
+    let seedData = null;
+    let isShopUpdate = false;
+    let audioEnabled = false;
+    let serverUpdateTime = null;
+    let serverUpdateInterval = 5 * 60 * 1000;
 
-        const emojiToImage = {
-            "🌵": "/images/cactus.png",
-            "🍓": "/images/strawberry.png",
-            "🎃": "/images/pumpkin.png",
-            "🌻": "/images/sunflower.png",
-            "🐉": "/images/dragon_fruit.png",
-            "🍆": "/images/eggplant.png",
-            "🍉": "/images/watermelon.png",
-            "🍇": "/images/grape.png",
-            "🥥": "/images/cocotank.png",
-            "🪴": "/images/carnivorous_plant.png",
-            "🥕": "/images/mr_carrot.png",
-            "🍅": "/images/tomatrio.png",
-            "🍄": "/images/shroombino.png",
-        };
+    const emojiToImage = {
+        "🌵": "/images/cactus.png",
+        "🍓": "/images/strawberry.png",
+        "🎃": "/images/pumpkin.png",
+        "🌻": "/images/sunflower.png",
+        "🐉": "/images/dragon_fruit.png",
+        "🍆": "/images/eggplant.png",
+        "🍉": "/images/watermelon.png",
+        "🍇": "/images/grape.png",
+        "🥥": "/images/cocotank.png",
+        "🪴": "/images/carnivorous_plant.png",
+        "🥕": "/images/mr_carrot.png",
+        "🍅": "/images/tomatrio.png",
+        "🍄": "/images/shroombino.png",
+    };
 
-        const fruitPriority = {
-            "🌵": 1,
-            "🍓": 2,
-            "🎃": 3,
-            "🌻": 4,
-            "🐉": 5,
-            "🍆": 6,
-            "🍉": 7,
-            "🥥": 8,
-            "🪴": 9,
-            "🥕": 10,
-            "🍅": 11,
-        };
+    const fruitPriority = {
+        "🌵": 1,
+        "🍓": 2,
+        "🎃": 3,
+        "🌻": 4,
+        "🐉": 5,
+        "🍆": 6,
+        "🍉": 7,
+        "🥥": 8,
+        "🪴": 9,
+        "🥕": 10,
+        "🍅": 11,
+    };
 
-        const itemColors = {
-            "🍉": "#e22bd0",
-            "🍇": "#e22bd0",
-            "🥥": "#FFD700",
-            "🪴": "#FFD700",
-            "🥕": "#C0C0C0",
-            "🍅": "#C0C0C0",
-            "🍄": "#C0C0C0",
-        };
+    const itemColors = {
+        "🍉": "#e22bd0",
+        "🍇": "#e22bd0",
+        "🥥": "#FFD700",
+        "🪴": "#FFD700",
+        "🥕": "#C0C0C0",
+        "🍅": "#C0C0C0",
+        "🍄": "#C0C0C0",
+    };
 
-        const defaultImage = "/images/default.png";
+    const defaultImage = "/images/default.png";
 
-        const emojiSounds = {
-            "🌵": "/sounds/cactus.mp3",
-            "🍓": "/sounds/strawberry.mp3",
-            "🎃": "/sounds/pumpkin.mp3",
-            "🌻": "/sounds/sunflower.mp3",
-            "🐉": "/sounds/dragon_fruit.mp3",
-            "🍆": "/sounds/eggplant.mp3",
-            "🍉": "/sounds/watermelon.mp3",
-            "🍇": "/sounds/grape.mp3",
-            "🥥": "/sounds/cocotank.mp3",
-            "🪴": "/sounds/carnivorous_plant.mp3",
-            "🥕": "/sounds/mr_carrot.mp3",
-            "🍅": "/sounds/tomatrio.mp3",
-            "🍄": "/sounds/shroombino.mp3",
-        };
+    const emojiSounds = {
+        "🌵": "/sounds/cactus.mp3",
+        "🍓": "/sounds/strawberry.mp3",
+        "🎃": "/sounds/pumpkin.mp3",
+        "🌻": "/sounds/sunflower.mp3",
+        "🐉": "/sounds/dragon_fruit.mp3",
+        "🍆": "/sounds/eggplant.mp3",
+        "🍉": "/sounds/watermelon.mp3",
+        "🍇": "/sounds/grape.mp3",
+        "🥥": "/sounds/cocotank.mp3",
+        "🪴": "/sounds/carnivorous_plant.mp3",
+        "🥕": "/sounds/mr_carrot.mp3",
+        "🍅": "/sounds/tomatrio.mp3",
+        "🍄": "/sounds/shroombino.mp3",
+    };
 
-        let soundedItems = new Set();
+    function enableAudio() {
+        audioEnabled = true;
+        const button = document.getElementById('enable-audio-btn');
+        button.textContent = '🔊 Sounds Enabled';
+        button.classList.add('enabled');
 
-        function enableAudio() {
-            audioEnabled = true;
-            const button = document.getElementById('enable-audio-btn');
-            button.textContent = '🔊 Sounds Enabled';
-            button.classList.add('enabled');
+        const audio = new Audio();
+        audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+        audio.play().catch(() => {});
+    }
 
-            // Play a silent sound to unlock audio context
-            const audio = new Audio();
-            audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
-            audio.play().catch(() => {});
+    function playSoundForItem(emoji) {
+        if (!audioEnabled) return;
+        const soundSrc = emojiSounds[emoji];
+        if (!soundSrc) return;
+        const audio = new Audio(soundSrc);
+        audio.play().catch(e => console.warn("Sound blocked:", e));
+    }
+
+    function getNextShopUpdate() {
+        if (serverUpdateTime) {
+            const now = Date.now();
+            let nextUpdate = serverUpdateTime;
+            while (nextUpdate <= now) {
+                nextUpdate += serverUpdateInterval;
+            }
+            return nextUpdate;
         }
 
-        function playSoundForItem(emoji) {
-            if (!audioEnabled) return;
-
-            const soundSrc = emojiSounds[emoji];
-            if (!soundSrc) return;
-
-            // Play sound every time stock refreshes
-            const audio = new Audio(soundSrc);
-            audio.play().catch(e => console.warn("Sound blocked:", e));
+        const now = new Date();
+        const minutes = now.getUTCMinutes();
+        const nextMinutes = 5 * Math.ceil(minutes / 5);
+        const next = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            now.getUTCHours(),
+            nextMinutes,
+            10,
+            0
+        ));
+        if (next <= now) {
+            next.setUTCMinutes(next.getUTCMinutes() + 5);
         }
+        return next.getTime();
+    }
 
-        function getNextShopUpdate() {
-            if (serverUpdateTime) {
-                const now = Date.now();
-                let nextUpdate = serverUpdateTime;
+    function updateCountdown() {
+        if (!seedData) return;
+        const diff = getNextShopUpdate() - Date.now();
+        const countdownEl = document.getElementById('last-updated');
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+        countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
+        if (minutes === 0 && seconds <= 5 && seconds > 0) {
+            isShopUpdate = true;
+        }
+    }
 
-                while (nextUpdate <= now) {
-                    nextUpdate += serverUpdateInterval;
+    async function loadStock(manualRefresh = false) {
+        try {
+            const refreshBtn = document.querySelector('.refresh-btn');
+
+            if (isShopUpdate && !manualRefresh) {
+                refreshBtn.classList.add('shop-update');
+                setTimeout(() => {
+                    refreshBtn.classList.remove('shop-update');
+                    isShopUpdate = false;
+                }, 1500);
+            }
+
+            const seedRes = await fetch("/api/seed-shop");
+            const seedJson = await seedRes.json();
+            seedData = seedJson;
+
+            if (seedJson.reportedAt) {
+                const reportedTime = new Date(seedJson.reportedAt).getTime();
+                const reportedDate = new Date(reportedTime);
+                const minutes = reportedDate.getUTCMinutes();
+                const nextIntervalMinutes = 5 * Math.ceil(minutes / 5);
+                const nextUpdateDate = new Date(Date.UTC(
+                    reportedDate.getUTCFullYear(),
+                    reportedDate.getUTCMonth(),
+                    reportedDate.getUTCDate(),
+                    reportedDate.getUTCHours(),
+                    nextIntervalMinutes,
+                    10,
+                    0
+                ));
+                if (nextUpdateDate <= reportedDate) {
+                    nextUpdateDate.setUTCMinutes(nextUpdateDate.getUTCMinutes() + 5);
                 }
-
-                return nextUpdate;
+                serverUpdateTime = nextUpdateDate.getTime();
             }
 
-            const now = new Date();
-            const minutes = now.getUTCMinutes();
-            const seconds = now.getUTCSeconds();
+            let seedItems = seedJson?.seeds || [];
+            const seedItemsEl = document.getElementById('seed-items');
+            const seedCountEl = document.getElementById('seed-count');
 
-            // Calculate next 5-minute interval + 10 seconds
-            const nextMinutes = 5 * Math.ceil(minutes / 5);
-            const next = new Date(Date.UTC(
-                now.getUTCFullYear(),
-                now.getUTCMonth(),
-                now.getUTCDate(),
-                now.getUTCHours(),
-                nextMinutes,
-                10, // Set to 10 seconds
-                0
-            ));
+            if (seedItems.length === 0) {
+                seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
+                seedCountEl.textContent = '0 items';
+            } else {
+                seedItems = seedItems.sort((a, b) => {
+                    const priorityA = fruitPriority[a.emoji] || 0;
+                    const priorityB = fruitPriority[b.emoji] || 0;
+                    return priorityB - priorityA;
+                });
 
-            // If we're past the next update time, add 5 more minutes
-            if (next <= now) {
-                next.setUTCMinutes(next.getUTCMinutes() + 5);
-            }
+                seedItemsEl.innerHTML = seedItems.map(s => {
+                    const imgSrc = emojiToImage[s.emoji] || defaultImage;
+                    const color = itemColors[s.emoji];
+                    return `
+                        <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
+                            <div class="item-icon">
+                                <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
+                            </div>
+                            <div class="item-details">
+                                <div class="item-name">${s.name}</div>
+                                <div class="item-quantity">Quantity: ${s.qty}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
 
-            return next.getTime();
-        }
-
-        function updateCountdown() {
-            if (!seedData) return;
-
-            const diff = getNextShopUpdate() - Date.now();
-            const countdownEl = document.getElementById('last-updated');
-            const minutes = Math.floor(diff / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
-
-            countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
-
-            if (minutes === 0 && seconds <= 5 && seconds > 0) {
-                isShopUpdate = true;
-            }
-        }
-
-        async function loadStock(manualRefresh = false) {
-            try {
-                const refreshBtn = document.querySelector('.refresh-btn');
+                seedCountEl.textContent = `${seedItems.length} items`;
 
                 if (isShopUpdate && !manualRefresh) {
-                    refreshBtn.classList.add('shop-update');
-                    setTimeout(() => {
-                        refreshBtn.classList.remove('shop-update');
-                        isShopUpdate = false;
-                    }, 1500);
+                    seedItems.forEach(s => playSoundForItem(s.emoji));
                 }
-
-                const seedRes = await fetch("/api/seed-shop");
-                const seedJson = await seedRes.json();
-                seedData = seedJson;
-
-                if (seedJson.reportedAt) {
-                    const reportedTime = new Date(seedJson.reportedAt).getTime();
-
-                    // Calculate the next update time based on 5-minute intervals + 10 seconds
-                    const reportedDate = new Date(reportedTime);
-                    const minutes = reportedDate.getUTCMinutes();
-                    const nextIntervalMinutes = 5 * Math.ceil(minutes / 5);
-                    const nextUpdateDate = new Date(Date.UTC(
-                        reportedDate.getUTCFullYear(),
-                        reportedDate.getUTCMonth(),
-                        reportedDate.getUTCDate(),
-                        reportedDate.getUTCHours(),
-                        nextIntervalMinutes,
-                        10, // 10 seconds past the interval
-                        0
-                    ));
-
-                    if (nextUpdateDate <= reportedDate) {
-                        nextUpdateDate.setUTCMinutes(nextUpdateDate.getUTCMinutes() + 5);
-                    }
-
-                    serverUpdateTime = nextUpdateDate.getTime();
-                }
-
-                let seedItems = seedJson?.seeds || [];
-                const seedItemsEl = document.getElementById('seed-items');
-                const seedCountEl = document.getElementById('seed-count');
-
-                if (seedItems.length === 0) {
-                    seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
-                    seedCountEl.textContent = '0 items';
-                } else {
-                    seedItems = seedItems.sort((a, b) => {
-                        const priorityA = fruitPriority[a.emoji] || 0;
-                        const priorityB = fruitPriority[b.emoji] || 0;
-                        return priorityB - priorityA;
-                    });
-
-                    seedItemsEl.innerHTML = seedItems.map(s => {
-                        const imgSrc = emojiToImage[s.emoji] || defaultImage;
-                        const color = itemColors[s.emoji];
-
-                        playSoundForItem(s.emoji);
-
-                        return `
-                            <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
-                                <div class="item-icon">
-                                    <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                                </div>
-                                <div class="item-details">
-                                    <div class="item-name">${s.name}</div>
-                                    <div class="item-quantity">Quantity: ${s.qty}</div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-
-                    seedCountEl.textContent = `${seedItems.length} items`;
-                }
-
-                updateCountdown();
-            } catch (err) {
-                console.error(err);
-                document.getElementById('seed-items').innerHTML = '<div class="error">Failed to load stock.</div>';
-                document.getElementById('last-updated').textContent = 'Failed to load stock.';
             }
+
+            updateCountdown();
+        } catch (err) {
+            console.error(err);
+            document.getElementById('seed-items').innerHTML = '<div class="error">Failed to load stock.</div>';
+            document.getElementById('last-updated').textContent = 'Failed to load stock.';
         }
+    }
 
-        loadStock();
-        setInterval(() => loadStock(false), 10000);
-        setInterval(updateCountdown, 1000);
+    loadStock();
+    setInterval(() => loadStock(false), 10000);
+    setInterval(updateCountdown, 1000);
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('last-updated').textContent = 'Loading...';
-        });
-    </script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('last-updated').textContent = 'Loading...';
+    });
+</script>
 </body>
 </html>
