@@ -383,32 +383,39 @@
 
 function getNextUpdateTime() {
     const now = new Date();
-    // Find next 5-minute mark
-    let nextMinutes = Math.floor(now.getMinutes() / 5) * 5 + 5;
+    const minutes = now.getMinutes();
+    const remainder = minutes % 5;
+    const nextMinutes = minutes + (5 - remainder);
     const nextUpdate = new Date(now);
     nextUpdate.setMinutes(nextMinutes);
-    nextUpdate.setSeconds(10);  // +10 seconds
+    nextUpdate.setSeconds(10);
     nextUpdate.setMilliseconds(0);
+    if (nextUpdate <= now) nextUpdate.setMinutes(nextUpdate.getMinutes() + 5);
     return nextUpdate.getTime();
 }
 
-function updateCountdown() {
-    if (!seedData) return;
+function scheduleNextUpdate() {
     const nextUpdate = getNextUpdateTime();
     const diff = nextUpdate - Date.now();
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    const lastUpdateTime = seedData.reportedAt ? new Date(seedData.reportedAt).toLocaleTimeString() : "N/A";
-    document.getElementById('last-updated').textContent =
-        `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
 
-    if (diff <= 0) {
-        loadStock();  // trigger refresh exactly at next update time
-    }
+    const countdownEl = document.getElementById('last-updated');
+    const interval = setInterval(() => {
+        const remaining = nextUpdate - Date.now();
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        const lastUpdateTime = seedData?.reportedAt ? new Date(seedData.reportedAt).toLocaleTimeString() : "N/A";
+        countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${mins}m ${secs}s`;
+    }, 1000);
+
+    setTimeout(() => {
+        clearInterval(interval);
+        loadStock();
+        scheduleNextUpdate();
+    }, diff);
 }
 
-        setInterval(() => loadStock(false), 10000);
-        setInterval(updateCountdown, 1000);
+scheduleNextUpdate();
+
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('last-updated').textContent = 'Loading...';
