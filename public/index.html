@@ -673,6 +673,8 @@ function updateSettingsUI() {
             individualSettings.appendChild(settingItem);
         });
 
+        updateSettingsUI(); // <-- add this here
+
         // Settings button toggle
         const settingsBtn = document.getElementById('settings-btn');
         const settingsDropdown = document.getElementById('settings-dropdown');
