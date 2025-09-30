@@ -744,15 +744,14 @@ function updateCountdown() {
     const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
     countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
 
-    // Only set flag when we're at EXACTLY 0
-    if (minutes === 0 && seconds === 0 && !isShopUpdate) {
-        isShopUpdate = true;
-        // Delay sounds by 15s
-        setTimeout(() => {
-            loadStock(false);
-            isShopUpdate = false;
-        }, 15000);
-    }
+// Only set flag when we're at EXACTLY 4:40
+if (minutes === 4 && seconds === 40 && !isShopUpdate) {
+    isShopUpdate = true;
+    seedData?.seeds?.forEach(s => playSoundForItem(s.emoji));
+    setTimeout(() => {
+        isShopUpdate = false;
+    }, 2000);
+}
 }
 
     async function loadStock(manualRefresh = false) {
