@@ -53,8 +53,9 @@
             transition: all 0.3s ease;
         }
 
+        /*  Updated button styles to include settings button */
         .refresh-btn,
-        .enable-audio-btn {
+        .settings-btn {
             padding: 0.5rem 1rem;
             background: #1f1f1f;
             border: 1px solid #2d2d2d;
@@ -66,19 +67,8 @@
             overflow: hidden;
         }
 
-        .enable-audio-btn {
-            background: #2d4a2d;
-            border-color: #3d5a3d;
-        }
-
-        .enable-audio-btn.enabled {
-            background: #1f4a1f;
-            border-color: #2d6a2d;
-            color: #90ee90;
-        }
-
         .refresh-btn::before,
-        .enable-audio-btn::before {
+        .settings-btn::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -90,19 +80,145 @@
         }
 
         .refresh-btn:hover::before,
-        .enable-audio-btn:hover::before {
+        .settings-btn:hover::before {
             width: 100%;
             height: 100%;
         }
 
         .refresh-btn:active,
-        .enable-audio-btn:active {
+        .settings-btn:active {
             transform: translateY(-1px) scale(1.02);
             transition: all 0.1s ease;
         }
 
         .refresh-btn.shop-update {
             animation: shopUpdatePulse 1.5s ease-in-out;
+        }
+
+        /*  Added settings dropdown styles with high z-index */
+        .settings-dropdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1f1f1f;
+            border: 1px solid #2d2d2d;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            min-width: 300px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 9999;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            display: none;
+        }
+
+        .settings-dropdown.active {
+            display: block;
+        }
+
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            display: none;
+        }
+
+        .settings-overlay.active {
+            display: block;
+        }
+
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .settings-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .settings-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #151515;
+            border: 1px solid #2d2d2d;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .setting-item:hover {
+            background: #1a1a1a;
+        }
+
+        .setting-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #e5e7eb;
+        }
+
+        .setting-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .setting-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #2d2d2d;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #2d6a2d;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
         }
 
         .grid {
@@ -320,13 +436,37 @@
     </style>
 </head>
 <body>
+    <!--  Added settings overlay and dropdown -->
+    <div class="settings-overlay" id="settings-overlay"></div>
+    <div class="settings-dropdown" id="settings-dropdown">
+        <div class="settings-title">Settings</div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Audio</div>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <span>Enable Sounds</span>
+                </div>
+                <div class="toggle-switch" id="master-audio-toggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-section-title">Individual Sounds</div>
+            <div id="individual-sound-settings"></div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1 class="header-title">Plants vs Brainrots Stock - Live</h1>
             <div class="controls">
                 <span id="last-updated">Loading...</span>
                 <button class="refresh-btn" onclick="loadStock(true)">Refresh</button>
-                <button class="enable-audio-btn" id="enable-audio-btn" onclick="enableAudio()">🔊 Enable Sounds</button>
+                <!--  Replaced enable audio button with settings button -->
+                <button class="settings-btn" id="settings-btn">⚙️ Settings</button>
             </div>
         </div>
 
@@ -349,6 +489,8 @@
     let audioEnabled = false;
     let serverUpdateTime = null;
     let serverUpdateInterval = 5 * 60 * 1000;
+    //  Added sound preferences object
+    let soundPreferences = {};
 
     const emojiToImage = {
         "🌵": "/images/cactus.png",
@@ -364,6 +506,22 @@
         "🥕": "/images/mr_carrot.png",
         "🍅": "/images/tomatrio.png",
         "🍄": "/images/shroombino.png",
+    };
+
+    const emojiToName = {
+        "🌵": "Cactus",
+        "🍓": "Strawberry",
+        "🎃": "Pumpkin",
+        "🌻": "Sunflower",
+        "🐉": "Dragon Fruit",
+        "🍆": "Eggplant",
+        "🍉": "Watermelon",
+        "🍇": "Grape",
+        "🥥": "Cocotank",
+        "🪴": "Carnivorous Plant",
+        "🥕": "Mr Carrot",
+        "🍅": "Tomatrio",
+        "🍄": "Shroombino",
     };
 
     const fruitPriority = {
@@ -408,19 +566,128 @@
         "🍄": "/sounds/shroombino.mp3",
     };
 
-    function enableAudio() {
-        audioEnabled = true;
-        const button = document.getElementById('enable-audio-btn');
-        button.textContent = '🔊 Sounds Enabled';
-        button.classList.add('enabled');
-
-        const audio = new Audio();
-        audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
-        audio.play().catch(() => {});
+    //  Load preferences from localStorage
+    function loadPreferences() {
+        const savedAudio = localStorage.getItem('audioEnabled');
+        audioEnabled = savedAudio === 'true';
+        
+        const savedPreferences = localStorage.getItem('soundPreferences');
+        if (savedPreferences) {
+            soundPreferences = JSON.parse(savedPreferences);
+        } else {
+            // Default all to true
+            Object.keys(emojiSounds).forEach(emoji => {
+                soundPreferences[emoji] = true;
+            });
+        }
+        
+        updateSettingsUI();
     }
 
+    //  Save preferences to localStorage
+    function savePreferences() {
+        localStorage.setItem('audioEnabled', audioEnabled);
+        localStorage.setItem('soundPreferences', JSON.stringify(soundPreferences));
+    }
+
+    //  Update settings UI based on current preferences
+    function updateSettingsUI() {
+        const masterToggle = document.getElementById('master-audio-toggle');
+        if (audioEnabled) {
+            masterToggle.classList.add('active');
+        } else {
+            masterToggle.classList.remove('active');
+        }
+
+        // Update individual toggles
+        Object.keys(emojiSounds).forEach(emoji => {
+            const toggle = document.getElementById(`sound-toggle-${emoji}`);
+            if (toggle) {
+                if (soundPreferences[emoji]) {
+                    toggle.classList.add('active');
+                } else {
+                    toggle.classList.remove('active');
+                }
+            }
+        });
+    }
+
+    //  Initialize settings dropdown
+    function initializeSettings() {
+        const individualSettings = document.getElementById('individual-sound-settings');
+        
+        Object.keys(emojiSounds).forEach(emoji => {
+            const imgSrc = emojiToImage[emoji] || defaultImage;
+            const name = emojiToName[emoji] || emoji;
+            
+            const settingItem = document.createElement('div');
+            settingItem.className = 'setting-item';
+            settingItem.innerHTML = `
+                <div class="setting-label">
+                    <div class="setting-icon">
+                        <img src="${imgSrc}" alt="${name}">
+                    </div>
+                    <span>${name}</span>
+                </div>
+                <div class="toggle-switch" id="sound-toggle-${emoji}">
+                    <div class="toggle-slider"></div>
+                </div>
+            `;
+            
+            const toggle = settingItem.querySelector('.toggle-switch');
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                soundPreferences[emoji] = !soundPreferences[emoji];
+                savePreferences();
+                updateSettingsUI();
+            });
+            
+            individualSettings.appendChild(settingItem);
+        });
+
+        // Master audio toggle
+        const masterToggle = document.getElementById('master-audio-toggle');
+        masterToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audioEnabled = !audioEnabled;
+            
+            if (audioEnabled) {
+                const audio = new Audio();
+                audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+                audio.play().catch(() => {});
+            }
+            
+            savePreferences();
+            updateSettingsUI();
+        });
+
+        // Settings button toggle
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsDropdown = document.getElementById('settings-dropdown');
+        const settingsOverlay = document.getElementById('settings-overlay');
+
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsDropdown.classList.add('active');
+            settingsOverlay.classList.add('active');
+        });
+
+        // Close when clicking overlay (outside dropdown)
+        settingsOverlay.addEventListener('click', () => {
+            settingsDropdown.classList.remove('active');
+            settingsOverlay.classList.remove('active');
+        });
+
+        // Prevent closing when clicking inside dropdown
+        settingsDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
+
+    //  Updated playSoundForItem to check individual preferences
     function playSoundForItem(emoji) {
         if (!audioEnabled) return;
+        if (!soundPreferences[emoji]) return;
         const soundSrc = emojiSounds[emoji];
         if (!soundSrc) return;
         const audio = new Audio(soundSrc);
@@ -549,6 +816,9 @@
         }
     }
 
+    //  Initialize settings and load preferences on page load
+    loadPreferences();
+    initializeSettings();
     loadStock();
     setInterval(() => loadStock(false), 10000);
     setInterval(updateCountdown, 1000);
