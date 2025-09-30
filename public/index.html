@@ -622,20 +622,19 @@
         localStorage.setItem('soundPreferences', JSON.stringify(soundPreferences));
     }
 
-    // Update settings UI based on current preferences
-    function updateSettingsUI() {
-        // Update individual toggles
-        Object.keys(emojiSounds).forEach(emoji => {
-            const toggle = document.getElementById(`sound-toggle-${emoji}`);
-            if (toggle) {
-                if (soundPreferences[emoji]) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
+function updateSettingsUI() {
+    Object.keys(emojiSounds).forEach(emoji => {
+        const toggle = document.getElementById(`sound-toggle-${emoji}`);
+        if (toggle) {
+            if (soundPreferences[emoji]) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
             }
-        });
-    }
+        }
+    });
+}
+
 
     // Initialize settings dropdown
     function initializeSettings() {
@@ -661,11 +660,15 @@
             
             const toggle = settingItem.querySelector('.toggle-switch');
             toggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                soundPreferences[emoji] = !soundPreferences[emoji];
-                savePreferences();
-                updateSettingsUI();
-            });
+    e.stopPropagation();
+    soundPreferences[emoji] = !soundPreferences[emoji];
+    savePreferences();
+    if (soundPreferences[emoji]) {
+        toggle.classList.add('active');
+    } else {
+        toggle.classList.remove('active');
+    }
+});
             
             individualSettings.appendChild(settingItem);
         });
