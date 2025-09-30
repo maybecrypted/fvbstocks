@@ -735,18 +735,25 @@ function updateSettingsUI() {
         return next.getTime();
     }
 
-    function updateCountdown() {
-        if (!seedData) return;
-        const diff = getNextShopUpdate() - Date.now();
-        const countdownEl = document.getElementById('last-updated');
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
-        countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
-        if (minutes === 0 && seconds <= 5 && seconds > 0) {
-            isShopUpdate = true;
-        }
+function updateCountdown() {
+    if (!seedData) return;
+    const diff = getNextShopUpdate() - Date.now();
+    const countdownEl = document.getElementById('last-updated');
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+    countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
+
+    // Only set flag when we're at EXACTLY 0
+    if (minutes === 0 && seconds === 0 && !isShopUpdate) {
+        isShopUpdate = true;
+        // Delay sounds by 15s
+        setTimeout(() => {
+            loadStock(false);
+            isShopUpdate = false;
+        }, 15000);
     }
+}
 
     async function loadStock(manualRefresh = false) {
         try {
