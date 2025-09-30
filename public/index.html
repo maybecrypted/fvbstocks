@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plants vs Brainrot Stock</title>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         * {
             margin: 0;
@@ -53,9 +54,7 @@
             transition: all 0.3s ease;
         }
 
-        /*  Updated button styles to include settings button */
-        .refresh-btn,
-        .settings-btn {
+        .refresh-btn {
             padding: 0.5rem 1rem;
             background: #1f1f1f;
             border: 1px solid #2d2d2d;
@@ -67,8 +66,7 @@
             overflow: hidden;
         }
 
-        .refresh-btn::before,
-        .settings-btn::before {
+        .refresh-btn::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -79,14 +77,12 @@
             transform: translate(-50%, -50%);
         }
 
-        .refresh-btn:hover::before,
-        .settings-btn:hover::before {
+        .refresh-btn:hover::before {
             width: 100%;
             height: 100%;
         }
 
-        .refresh-btn:active,
-        .settings-btn:active {
+        .refresh-btn:active {
             transform: translateY(-1px) scale(1.02);
             transition: all 0.1s ease;
         }
@@ -95,7 +91,42 @@
             animation: shopUpdatePulse 1.5s ease-in-out;
         }
 
-        /*  Added settings dropdown styles with high z-index */
+        /* Updated settings button styles for top right positioning */
+        .settings-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 75px;
+            height: 75px;
+            background: #1f1f1f;
+            border: 1px solid #2d2d2d;
+            border-radius: 0.75rem;
+            color: #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings-btn:hover {
+            background: #2a2a2a;
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .settings-btn:active {
+            transform: scale(0.95);
+        }
+
+        .settings-btn svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Settings dropdown styles with high z-index */
         .settings-dropdown {
             position: fixed;
             top: 50%;
@@ -432,32 +463,40 @@
                 align-items: center;
                 gap: 0.5rem;
             }
+
+            .settings-btn {
+                width: 60px;
+                height: 60px;
+                top: 10px;
+                right: 10px;
+            }
+
+            .settings-btn svg {
+                width: 24px;
+                height: 24px;
+            }
         }
     </style>
 </head>
 <body>
-    <!--  Added settings overlay and dropdown -->
+    <!-- Settings overlay and dropdown -->
     <div class="settings-overlay" id="settings-overlay"></div>
     <div class="settings-dropdown" id="settings-dropdown">
         <div class="settings-title">Settings</div>
         
         <div class="settings-section">
-            <div class="settings-section-title">Audio</div>
-            <div class="setting-item">
-                <div class="setting-label">
-                    <span>Enable Sounds</span>
-                </div>
-                <div class="toggle-switch" id="master-audio-toggle">
-                    <div class="toggle-slider"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section">
             <div class="settings-section-title">Individual Sounds</div>
             <div id="individual-sound-settings"></div>
         </div>
     </div>
+
+    <!-- Settings button in top right -->
+    <button class="settings-btn" id="settings-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+    </button>
 
     <div class="container">
         <div class="header">
@@ -465,8 +504,6 @@
             <div class="controls">
                 <span id="last-updated">Loading...</span>
                 <button class="refresh-btn" onclick="loadStock(true)">Refresh</button>
-                <!--  Replaced enable audio button with settings button -->
-                <button class="settings-btn" id="settings-btn">⚙️ Settings</button>
             </div>
         </div>
 
@@ -483,13 +520,12 @@
         </div>
     </div>
 
-   <script>
+    <script>
     let seedData = null;
     let isShopUpdate = false;
-    let audioEnabled = false;
     let serverUpdateTime = null;
     let serverUpdateInterval = 5 * 60 * 1000;
-    //  Added sound preferences object
+    // Sound preferences object (no master audio toggle needed)
     let soundPreferences = {};
 
     const emojiToImage = {
@@ -566,11 +602,8 @@
         "🍄": "/sounds/shroombino.mp3",
     };
 
-    //  Load preferences from localStorage
+    // Load preferences from localStorage
     function loadPreferences() {
-        const savedAudio = localStorage.getItem('audioEnabled');
-        audioEnabled = savedAudio === 'true';
-        
         const savedPreferences = localStorage.getItem('soundPreferences');
         if (savedPreferences) {
             soundPreferences = JSON.parse(savedPreferences);
@@ -584,21 +617,13 @@
         updateSettingsUI();
     }
 
-    //  Save preferences to localStorage
+    // Save preferences to localStorage
     function savePreferences() {
-        localStorage.setItem('audioEnabled', audioEnabled);
         localStorage.setItem('soundPreferences', JSON.stringify(soundPreferences));
     }
 
-    //  Update settings UI based on current preferences
+    // Update settings UI based on current preferences
     function updateSettingsUI() {
-        const masterToggle = document.getElementById('master-audio-toggle');
-        if (audioEnabled) {
-            masterToggle.classList.add('active');
-        } else {
-            masterToggle.classList.remove('active');
-        }
-
         // Update individual toggles
         Object.keys(emojiSounds).forEach(emoji => {
             const toggle = document.getElementById(`sound-toggle-${emoji}`);
@@ -612,7 +637,7 @@
         });
     }
 
-    //  Initialize settings dropdown
+    // Initialize settings dropdown
     function initializeSettings() {
         const individualSettings = document.getElementById('individual-sound-settings');
         
@@ -645,22 +670,6 @@
             individualSettings.appendChild(settingItem);
         });
 
-        // Master audio toggle
-        const masterToggle = document.getElementById('master-audio-toggle');
-        masterToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            audioEnabled = !audioEnabled;
-            
-            if (audioEnabled) {
-                const audio = new Audio();
-                audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
-                audio.play().catch(() => {});
-            }
-            
-            savePreferences();
-            updateSettingsUI();
-        });
-
         // Settings button toggle
         const settingsBtn = document.getElementById('settings-btn');
         const settingsDropdown = document.getElementById('settings-dropdown');
@@ -684,9 +693,8 @@
         });
     }
 
-    //  Updated playSoundForItem to check individual preferences
+    // Play sound for item (only checks individual preferences now)
     function playSoundForItem(emoji) {
-        if (!audioEnabled) return;
         if (!soundPreferences[emoji]) return;
         const soundSrc = emojiSounds[emoji];
         if (!soundSrc) return;
@@ -816,7 +824,7 @@
         }
     }
 
-    //  Initialize settings and load preferences on page load
+    // Initialize settings and load preferences on page load
     loadPreferences();
     initializeSettings();
     loadStock();
@@ -826,6 +834,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('last-updated').textContent = 'Loading...';
     });
-</script>
+    </script>
 </body>
 </html>
