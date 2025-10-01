@@ -895,13 +895,6 @@
                     }).join('');
 
                     seedCountEl.textContent = `${seedItems.length} items`;
-
-                    // ✅ Queue sounds sequentially on shop update
-                    if (isShopUpdate && !manualRefresh) {
-                        const emojis = seedItems.map(s => s.emoji);
-                        queueSoundsForItems(emojis);
-                        isShopUpdate = false;
-                    }
                 }
 
                 updateCountdown();
