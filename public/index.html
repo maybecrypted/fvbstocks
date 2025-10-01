@@ -622,18 +622,19 @@
         localStorage.setItem('soundPreferences', JSON.stringify(soundPreferences));
     }
 
-    function updateSettingsUI() {
-        Object.keys(emojiSounds).forEach(emoji => {
-            const toggle = document.getElementById(`sound-toggle-${emoji}`);
-            if (toggle) {
-                if (soundPreferences[emoji]) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
+function updateSettingsUI() {
+    Object.keys(emojiSounds).forEach(emoji => {
+        const toggle = document.getElementById(`sound-toggle-${emoji}`);
+        if (toggle) {
+            if (soundPreferences[emoji]) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
             }
-        });
-    }
+        }
+    });
+}
+
 
     // Initialize settings dropdown
     function initializeSettings() {
@@ -659,20 +660,20 @@
             
             const toggle = settingItem.querySelector('.toggle-switch');
             toggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                soundPreferences[emoji] = !soundPreferences[emoji];
-                savePreferences();
-                if (soundPreferences[emoji]) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
-            });
+    e.stopPropagation();
+    soundPreferences[emoji] = !soundPreferences[emoji];
+    savePreferences();
+    if (soundPreferences[emoji]) {
+        toggle.classList.add('active');
+    } else {
+        toggle.classList.remove('active');
+    }
+});
             
             individualSettings.appendChild(settingItem);
         });
 
-        updateSettingsUI();
+        updateSettingsUI(); // <-- add this here
 
         // Settings button toggle
         const settingsBtn = document.getElementById('settings-btn');
@@ -706,7 +707,6 @@
         audio.play().catch(e => console.warn("Sound blocked:", e));
     }
 
-    //  Updated to calculate next update at 10 seconds after every 5-minute interval
     function getNextShopUpdate() {
         if (serverUpdateTime) {
             const now = Date.now();
@@ -726,7 +726,7 @@
             now.getUTCDate(),
             now.getUTCHours(),
             nextMinutes,
-            10, // Changed from 0 to 10 seconds
+            10,
             0
         ));
         if (next <= now) {
@@ -735,27 +735,27 @@
         return next.getTime();
     }
 
-    let lastSoundTrigger = null;
+let lastSoundTrigger = null;
 
-    //  Updated to play sounds at exactly 0:00 (when countdown reaches update time)
-    function updateCountdown() {
-        if (!seedData) return;
-        const diff = getNextShopUpdate() - Date.now();
-        const countdownEl = document.getElementById('last-updated');
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
-        countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
+function updateCountdown() {
+    if (!seedData) return;
+    const diff = getNextShopUpdate() - Date.now();
+    const countdownEl = document.getElementById('last-updated');
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+    countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
 
-        // Play at exactly 0:00 (when update happens)
-        if (minutes === 0 && seconds === 0) {
-            const triggerKey = `${minutes}:${seconds}`;
-            if (lastSoundTrigger !== triggerKey) {
-                lastSoundTrigger = triggerKey;
-                seedData?.seeds?.forEach(s => playSoundForItem(s.emoji));
-            }
+    // Play at exactly 4:40 (once per cycle)
+    if (minutes === 4 && seconds === 40) {
+        const triggerKey = `${minutes}:${seconds}`;
+        if (lastSoundTrigger !== triggerKey) {
+            lastSoundTrigger = triggerKey;
+            seedData?.seeds?.forEach(s => playSoundForItem(s.emoji));
         }
     }
+}
+
 
     async function loadStock(manualRefresh = false) {
         try {
@@ -773,7 +773,6 @@
             const seedJson = await seedRes.json();
             seedData = seedJson;
 
-            //  Updated server time calculation to use 10 seconds
             if (seedJson.reportedAt) {
                 const reportedTime = new Date(seedJson.reportedAt).getTime();
                 const reportedDate = new Date(reportedTime);
@@ -785,7 +784,7 @@
                     reportedDate.getUTCDate(),
                     reportedDate.getUTCHours(),
                     nextIntervalMinutes,
-                    10, // Changed from 0 to 10 seconds
+                    10,
                     0
                 ));
                 if (nextUpdateDate <= reportedDate) {
