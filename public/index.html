@@ -420,7 +420,8 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+            0%,
+            100% {
                 opacity: 1;
             }
             50% {
@@ -478,9 +479,9 @@
 </head>
 <body>
     <div class="settings-overlay" id="settings-overlay"></div>
+
     <div class="settings-dropdown" id="settings-dropdown">
         <div class="settings-title">Settings</div>
-        
         <div class="settings-section">
             <div class="settings-section-title">Individual Sounds</div>
             <div id="individual-sound-settings"></div>
@@ -517,366 +518,414 @@
     </div>
 
     <script>
-    let seedData = null;
-    let isShopUpdate = false;
-    let serverUpdateTime = null;
-    let serverUpdateInterval = 5 * 60 * 1000;
-    let soundPreferences = {};
-    let soundQueue = [];
-    let isPlayingSound = false;
+        let seedData = null;
+        let previousSeedData = null;
+        let isShopUpdate = false;
+        let serverUpdateTime = null;
+        let serverUpdateInterval = 5 * 60 * 1000;
+        let soundPreferences = {};
+        let soundQueue = [];
+        let isPlayingSound = false;
+        let lastSoundTrigger = null;
 
-    const emojiToImage = {
-        "🌵": "/images/cactus.png",
-        "🍓": "/images/strawberry.png",
-        "🎃": "/images/pumpkin.png",
-        "🌻": "/images/sunflower.png",
-        "🐉": "/images/dragon_fruit.png",
-        "🍆": "/images/eggplant.png",
-        "🍉": "/images/watermelon.png",
-        "🍇": "/images/grape.png",
-        "🥥": "/images/cocotank.png",
-        "🪴": "/images/carnivorous_plant.png",
-        "🥕": "/images/mr_carrot.png",
-        "🍅": "/images/tomatrio.png",
-        "🍄": "/images/shroombino.png",
-    };
+        const emojiToImage = {
+            "🌵": "/images/cactus.png",
+            "🍓": "/images/strawberry.png",
+            "🎃": "/images/pumpkin.png",
+            "🌻": "/images/sunflower.png",
+            "🐉": "/images/dragon_fruit.png",
+            "🍆": "/images/eggplant.png",
+            "🍉": "/images/watermelon.png",
+            "🍇": "/images/grape.png",
+            "🥥": "/images/cocotank.png",
+            "🪴": "/images/carnivorous_plant.png",
+            "🥕": "/images/mr_carrot.png",
+            "🍅": "/images/tomatrio.png",
+            "🍄": "/images/shroombino.png",
+        };
 
-    const emojiToName = {
-        "🌵": "Cactus",
-        "🍓": "Strawberry",
-        "🎃": "Pumpkin",
-        "🌻": "Sunflower",
-        "🐉": "Dragon Fruit",
-        "🍆": "Eggplant",
-        "🍉": "Watermelon",
-        "🍇": "Grape",
-        "🥥": "Cocotank",
-        "🪴": "Carnivorous Plant",
-        "🥕": "Mr Carrot",
-        "🍅": "Tomatrio",
-        "🍄": "Shroombino",
-    };
+        const emojiToName = {
+            "🌵": "Cactus",
+            "🍓": "Strawberry",
+            "🎃": "Pumpkin",
+            "🌻": "Sunflower",
+            "🐉": "Dragon Fruit",
+            "🍆": "Eggplant",
+            "🍉": "Watermelon",
+            "🍇": "Grape",
+            "🥥": "Cocotank",
+            "🪴": "Carnivorous Plant",
+            "🥕": "Mr Carrot",
+            "🍅": "Tomatrio",
+            "🍄": "Shroombino",
+        };
 
-    const fruitPriority = {
-        "🌵": 1,
-        "🍓": 2,
-        "🎃": 3,
-        "🌻": 4,
-        "🐉": 5,
-        "🍆": 6,
-        "🍉": 7,
-        "🥥": 8,
-        "🪴": 9,
-        "🥕": 10,
-        "🍅": 11,
-    };
+        const fruitPriority = {
+            "🌵": 1,
+            "🍓": 2,
+            "🎃": 3,
+            "🌻": 4,
+            "🐉": 5,
+            "🍆": 6,
+            "🍉": 7,
+            "🥥": 8,
+            "🪴": 9,
+            "🥕": 10,
+            "🍅": 11,
+        };
 
-    const itemColors = {
-        "🍉": "#e22bd0",
-        "🍇": "#e22bd0",
-        "🥥": "#FFD700",
-        "🪴": "#FFD700",
-        "🥕": "#C0C0C0",
-        "🍅": "#C0C0C0",
-        "🍄": "#C0C0C0",
-    };
+        const itemColors = {
+            "🍉": "#e22bd0",
+            "🍇": "#e22bd0",
+            "🥥": "#FFD700",
+            "🪴": "#FFD700",
+            "🥕": "#C0C0C0",
+            "🍅": "#C0C0C0",
+            "🍄": "#C0C0C0",
+        };
 
-    const defaultImage = "/images/default.png";
+        const defaultImage = "/images/default.png";
 
-    const emojiSounds = {
-        "🌵": "/sounds/cactus.mp3",
-        "🍓": "/sounds/strawberry.mp3",
-        "🎃": "/sounds/pumpkin.mp3",
-        "🌻": "/sounds/sunflower.mp3",
-        "🐉": "/sounds/dragon_fruit.mp3",
-        "🍆": "/sounds/eggplant.mp3",
-        "🍉": "/sounds/watermelon.mp3",
-        "🍇": "/sounds/grape.mp3",
-        "🥥": "/sounds/cocotank.mp3",
-        "🪴": "/sounds/carnivorous_plant.mp3",
-        "🥕": "/sounds/mr_carrot.mp3",
-        "🍅": "/sounds/tomatrio.mp3",
-        "🍄": "/sounds/shroombino.mp3",
-    };
+        const emojiSounds = {
+            "🌵": "/sounds/cactus.mp3",
+            "🍓": "/sounds/strawberry.mp3",
+            "🎃": "/sounds/pumpkin.mp3",
+            "🌻": "/sounds/sunflower.mp3",
+            "🐉": "/sounds/dragon_fruit.mp3",
+            "🍆": "/sounds/eggplant.mp3",
+            "🍉": "/sounds/watermelon.mp3",
+            "🍇": "/sounds/grape.mp3",
+            "🥥": "/sounds/cocotank.mp3",
+            "🪴": "/sounds/carnivorous_plant.mp3",
+            "🥕": "/sounds/mr_carrot.mp3",
+            "🍅": "/sounds/tomatrio.mp3",
+            "🍄": "/sounds/shroombino.mp3",
+        };
 
-    function loadPreferences() {
-        const savedPreferences = localStorage.getItem('soundPreferences');
-        if (savedPreferences) {
-            soundPreferences = JSON.parse(savedPreferences);
-        } else {
-            Object.keys(emojiSounds).forEach(emoji => {
-                soundPreferences[emoji] = true;
-            });
-        }
-        
-        updateSettingsUI();
-    }
-
-    function savePreferences() {
-        localStorage.setItem('soundPreferences', JSON.stringify(soundPreferences));
-    }
-
-    function updateSettingsUI() {
-        Object.keys(emojiSounds).forEach(emoji => {
-            const toggle = document.getElementById(`sound-toggle-${emoji}`);
-            if (toggle) {
-                if (soundPreferences[emoji]) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
-            }
-        });
-    }
-
-    function initializeSettings() {
-        const individualSettings = document.getElementById('individual-sound-settings');
-        
-        Object.keys(emojiSounds).forEach(emoji => {
-            const imgSrc = emojiToImage[emoji] || defaultImage;
-            const name = emojiToName[emoji] || emoji;
-            
-            const settingItem = document.createElement('div');
-            settingItem.className = 'setting-item';
-            settingItem.innerHTML = `
-                <div class="setting-label">
-                    <div class="setting-icon">
-                        <img src="${imgSrc}" alt="${name}">
-                    </div>
-                    <span>${name}</span>
-                </div>
-                <div class="toggle-switch" id="sound-toggle-${emoji}">
-                    <div class="toggle-slider"></div>
-                </div>
-            `;
-            
-            const toggle = settingItem.querySelector('.toggle-switch');
-            toggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                soundPreferences[emoji] = !soundPreferences[emoji];
-                savePreferences();
-                if (soundPreferences[emoji]) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
-            });
-            
-            individualSettings.appendChild(settingItem);
-        });
-
-        updateSettingsUI();
-
-        const settingsBtn = document.getElementById('settings-btn');
-        const settingsDropdown = document.getElementById('settings-dropdown');
-        const settingsOverlay = document.getElementById('settings-overlay');
-
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsDropdown.classList.add('active');
-            settingsOverlay.classList.add('active');
-        });
-
-        settingsOverlay.addEventListener('click', () => {
-            settingsDropdown.classList.remove('active');
-            settingsOverlay.classList.remove('active');
-        });
-
-        settingsDropdown.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    }
-
-    //  New sequential sound playback system
-    function playNextSound() {
-        if (soundQueue.length === 0) {
-            isPlayingSound = false;
-            return;
-        }
-
-        isPlayingSound = true;
-        const emoji = soundQueue.shift();
-        
-        if (!soundPreferences[emoji]) {
-            playNextSound();
-            return;
-        }
-
-        const soundSrc = emojiSounds[emoji];
-        if (!soundSrc) {
-            playNextSound();
-            return;
-        }
-
-        const audio = new Audio(soundSrc);
-        audio.addEventListener('ended', () => {
-            playNextSound();
-        });
-        audio.addEventListener('error', () => {
-            console.warn("Sound failed to play:", soundSrc);
-            playNextSound();
-        });
-        audio.play().catch(e => {
-            console.warn("Sound blocked:", e);
-            playNextSound();
-        });
-    }
-
-    //  Queue sounds for sequential playback
-    function queueSoundsForItems(emojis) {
-        emojis.forEach(emoji => {
-            if (soundPreferences[emoji] && emojiSounds[emoji]) {
-                soundQueue.push(emoji);
-            }
-        });
-
-        if (!isPlayingSound) {
-            playNextSound();
-        }
-    }
-
-    function getNextShopUpdate() {
-        if (serverUpdateTime) {
-            const now = Date.now();
-            let nextUpdate = serverUpdateTime;
-            while (nextUpdate <= now) {
-                nextUpdate += serverUpdateInterval;
-            }
-            return nextUpdate;
-        }
-
-        const now = new Date();
-        const minutes = now.getUTCMinutes();
-        const nextMinutes = 5 * Math.ceil(minutes / 5);
-        const next = new Date(Date.UTC(
-            now.getUTCFullYear(),
-            now.getUTCMonth(),
-            now.getUTCDate(),
-            now.getUTCHours(),
-            nextMinutes,
-            10,
-            0
-        ));
-        if (next <= now) {
-            next.setUTCMinutes(next.getUTCMinutes() + 5);
-        }
-        return next.getTime();
-    }
-
-    let lastSoundTrigger = null;
-
-    function updateCountdown() {
-        if (!seedData) return;
-        const diff = getNextShopUpdate() - Date.now();
-        const countdownEl = document.getElementById('last-updated');
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
-        countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
-
-        //  Queue sounds sequentially at 4:40
-        if (minutes === 4 && seconds === 40) {
-            const triggerKey = `${minutes}:${seconds}`;
-            if (lastSoundTrigger !== triggerKey) {
-                lastSoundTrigger = triggerKey;
-                const emojis = seedData?.seeds?.map(s => s.emoji) || [];
-                queueSoundsForItems(emojis);
-            }
-        }
-    }
-
-    async function loadStock(manualRefresh = false) {
-        try {
-            const refreshBtn = document.querySelector('.refresh-btn');
-
-            if (isShopUpdate && !manualRefresh) {
-                refreshBtn.classList.add('shop-update');
-                setTimeout(() => {
-                    refreshBtn.classList.remove('shop-update');
-                    isShopUpdate = false;
-                }, 1500);
-            }
-
-            const seedRes = await fetch("/api/seed-shop");
-            const seedJson = await seedRes.json();
-            seedData = seedJson;
-
-            if (seedJson.reportedAt) {
-                const reportedTime = new Date(seedJson.reportedAt).getTime();
-                const reportedDate = new Date(reportedTime);
-                const minutes = reportedDate.getUTCMinutes();
-                const nextIntervalMinutes = 5 * Math.ceil(minutes / 5);
-                const nextUpdateDate = new Date(Date.UTC(
-                    reportedDate.getUTCFullYear(),
-                    reportedDate.getUTCMonth(),
-                    reportedDate.getUTCDate(),
-                    reportedDate.getUTCHours(),
-                    nextIntervalMinutes,
-                    10,
-                    0
-                ));
-                if (nextUpdateDate <= reportedDate) {
-                    nextUpdateDate.setUTCMinutes(nextUpdateDate.getUTCMinutes() + 5);
-                }
-                serverUpdateTime = nextUpdateDate.getTime();
-            }
-
-            let seedItems = seedJson?.seeds || [];
-            const seedItemsEl = document.getElementById('seed-items');
-            const seedCountEl = document.getElementById('seed-count');
-
-            if (seedItems.length === 0) {
-                seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
-                seedCountEl.textContent = '0 items';
+        // Load sound preferences from localStorage
+        function loadPreferences() {
+            const savedPreferences = localStorage.getItem('soundPreferences');
+            if (savedPreferences) {
+                soundPreferences = JSON.parse(savedPreferences);
             } else {
-                seedItems = seedItems.sort((a, b) => {
-                    const priorityA = fruitPriority[a.emoji] || 0;
-                    const priorityB = fruitPriority[b.emoji] || 0;
-                    return priorityB - priorityA;
+                // Default: all sounds enabled
+                Object.keys(emojiSounds).forEach(emoji => {
+                    soundPreferences[emoji] = true;
+                });
+            }
+            updateSettingsUI();
+        }
+
+        // Save sound preferences to localStorage
+        function savePreferences() {
+            localStorage.setItem('soundPreferences', JSON.stringify(soundPreferences));
+        }
+
+        // Update the settings UI toggles
+        function updateSettingsUI() {
+            Object.keys(emojiSounds).forEach(emoji => {
+                const toggle = document.getElementById(`sound-toggle-${emoji}`);
+                if (toggle) {
+                    if (soundPreferences[emoji]) {
+                        toggle.classList.add('active');
+                    } else {
+                        toggle.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        // Initialize settings panel
+        function initializeSettings() {
+            const individualSettings = document.getElementById('individual-sound-settings');
+
+            Object.keys(emojiSounds).forEach(emoji => {
+                const imgSrc = emojiToImage[emoji] || defaultImage;
+                const name = emojiToName[emoji] || emoji;
+
+                const settingItem = document.createElement('div');
+                settingItem.className = 'setting-item';
+                settingItem.innerHTML = `
+                    <div class="setting-label">
+                        <div class="setting-icon">
+                            <img src="${imgSrc}" alt="${name}">
+                        </div>
+                        <span>${name}</span>
+                    </div>
+                    <div class="toggle-switch" id="sound-toggle-${emoji}">
+                        <div class="toggle-slider"></div>
+                    </div>
+                `;
+
+                const toggle = settingItem.querySelector('.toggle-switch');
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    soundPreferences[emoji] = !soundPreferences[emoji];
+                    savePreferences();
+
+                    if (soundPreferences[emoji]) {
+                        toggle.classList.add('active');
+                    } else {
+                        toggle.classList.remove('active');
+                    }
                 });
 
-                seedItemsEl.innerHTML = seedItems.map(s => {
-                    const imgSrc = emojiToImage[s.emoji] || defaultImage;
-                    const color = itemColors[s.emoji];
-                    return `
-                        <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
-                            <div class="item-icon">
-                                <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
-                            </div>
-                            <div class="item-details">
-                                <div class="item-name">${s.name}</div>
-                                <div class="item-quantity">Quantity: ${s.qty}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                individualSettings.appendChild(settingItem);
+            });
 
-                seedCountEl.textContent = `${seedItems.length} items`;
+            updateSettingsUI();
 
-                //  Queue sounds sequentially on shop update
-                if (isShopUpdate && !manualRefresh) {
-                    const emojis = seedItems.map(s => s.emoji);
+            // Settings button and overlay handlers
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsDropdown = document.getElementById('settings-dropdown');
+            const settingsOverlay = document.getElementById('settings-overlay');
+
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                settingsDropdown.classList.add('active');
+                settingsOverlay.classList.add('active');
+            });
+
+            settingsOverlay.addEventListener('click', () => {
+                settingsDropdown.classList.remove('active');
+                settingsOverlay.classList.remove('active');
+            });
+
+            settingsDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // ✅ SEQUENTIAL SOUND PLAYBACK SYSTEM
+        function playNextSound() {
+            if (soundQueue.length === 0) {
+                isPlayingSound = false;
+                return;
+            }
+
+            isPlayingSound = true;
+            const emoji = soundQueue.shift();
+
+            // Skip if sound is disabled
+            if (!soundPreferences[emoji]) {
+                playNextSound();
+                return;
+            }
+
+            const soundSrc = emojiSounds[emoji];
+            if (!soundSrc) {
+                playNextSound();
+                return;
+            }
+
+            const audio = new Audio(soundSrc);
+
+            // When sound ends, play next
+            audio.addEventListener('ended', () => {
+                playNextSound();
+            });
+
+            // On error, skip to next
+            audio.addEventListener('error', () => {
+                console.warn("Sound failed to play:", soundSrc);
+                playNextSound();
+            });
+
+            // Start playing
+            audio.play().catch(e => {
+                console.warn("Sound blocked:", e);
+                playNextSound();
+            });
+        }
+
+        // Queue sounds for sequential playback
+        function queueSoundsForItems(emojis) {
+            emojis.forEach(emoji => {
+                if (soundPreferences[emoji] && emojiSounds[emoji]) {
+                    soundQueue.push(emoji);
+                }
+            });
+
+            // Start playing if not already playing
+            if (!isPlayingSound) {
+                playNextSound();
+            }
+        }
+
+        // Calculate next shop update time
+        function getNextShopUpdate() {
+            if (serverUpdateTime) {
+                const now = Date.now();
+                let nextUpdate = serverUpdateTime;
+
+                while (nextUpdate <= now) {
+                    nextUpdate += serverUpdateInterval;
+                }
+
+                return nextUpdate;
+            }
+
+            const now = new Date();
+            const minutes = now.getUTCMinutes();
+            const nextMinutes = 5 * Math.ceil(minutes / 5);
+
+            const next = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                now.getUTCHours(),
+                nextMinutes,
+                10,
+                0
+            ));
+
+            if (next <= now) {
+                next.setUTCMinutes(next.getUTCMinutes() + 5);
+            }
+
+            return next.getTime();
+        }
+
+        // Update countdown timer
+        function updateCountdown() {
+            if (!seedData) return;
+
+            const diff = getNextShopUpdate() - Date.now();
+            const countdownEl = document.getElementById('last-updated');
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            const lastUpdateTime = new Date(seedData.reportedAt).toLocaleTimeString();
+            countdownEl.textContent = `Last updated: ${lastUpdateTime} | Next update in: ${minutes}m ${seconds}s`;
+
+            // ✅ Queue sounds sequentially at 4:40
+            if (minutes === 4 && seconds === 40) {
+                const triggerKey = `${minutes}:${seconds}`;
+                if (lastSoundTrigger !== triggerKey) {
+                    lastSoundTrigger = triggerKey;
+                    const emojis = seedData?.seeds?.map(s => s.emoji) || [];
                     queueSoundsForItems(emojis);
                 }
             }
-
-            updateCountdown();
-        } catch (err) {
-            console.error(err);
-            document.getElementById('seed-items').innerHTML = '<div class="error">Failed to load stock.</div>';
-            document.getElementById('last-updated').textContent = 'Failed to load stock.';
         }
-    }
 
-    loadPreferences();
-    initializeSettings();
-    loadStock();
-    setInterval(() => loadStock(false), 10000);
-    setInterval(updateCountdown, 1000);
+        // Load stock data from API
+        async function loadStock(manualRefresh = false) {
+            try {
+                const refreshBtn = document.querySelector('.refresh-btn');
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('last-updated').textContent = 'Loading...';
-    });
+                const seedRes = await fetch("/api/seed-shop");
+                const seedJson = await seedRes.json();
+
+                // Detect if shop updated (data changed)
+                const dataChanged = JSON.stringify(previousSeedData) !== JSON.stringify(seedJson);
+                
+                if (dataChanged && previousSeedData !== null) {
+                    isShopUpdate = true;
+                }
+
+                previousSeedData = JSON.parse(JSON.stringify(seedJson));
+                seedData = seedJson;
+
+                // Visual pulse on shop update
+                if (isShopUpdate && !manualRefresh) {
+                    refreshBtn.classList.add('shop-update');
+                    setTimeout(() => {
+                        refreshBtn.classList.remove('shop-update');
+                    }, 1500);
+                }
+
+                // Calculate server update time
+                if (seedJson.reportedAt) {
+                    const reportedTime = new Date(seedJson.reportedAt).getTime();
+                    const reportedDate = new Date(reportedTime);
+                    const minutes = reportedDate.getUTCMinutes();
+                    const nextIntervalMinutes = 5 * Math.ceil(minutes / 5);
+
+                    const nextUpdateDate = new Date(Date.UTC(
+                        reportedDate.getUTCFullYear(),
+                        reportedDate.getUTCMonth(),
+                        reportedDate.getUTCDate(),
+                        reportedDate.getUTCHours(),
+                        nextIntervalMinutes,
+                        10,
+                        0
+                    ));
+
+                    if (nextUpdateDate <= reportedDate) {
+                        nextUpdateDate.setUTCMinutes(nextUpdateDate.getUTCMinutes() + 5);
+                    }
+
+                    serverUpdateTime = nextUpdateDate.getTime();
+                }
+
+                let seedItems = seedJson?.seeds || [];
+                const seedItemsEl = document.getElementById('seed-items');
+                const seedCountEl = document.getElementById('seed-count');
+
+                if (seedItems.length === 0) {
+                    seedItemsEl.innerHTML = '<div class="empty">No seeds in stock</div>';
+                    seedCountEl.textContent = '0 items';
+                } else {
+                    // Sort by priority
+                    seedItems = seedItems.sort((a, b) => {
+                        const priorityA = fruitPriority[a.emoji] || 0;
+                        const priorityB = fruitPriority[b.emoji] || 0;
+                        return priorityB - priorityA;
+                    });
+
+                    // Render items
+                    seedItemsEl.innerHTML = seedItems.map(s => {
+                        const imgSrc = emojiToImage[s.emoji] || defaultImage;
+                        const color = itemColors[s.emoji];
+
+                        return `
+                            <div class="item" style="${color ? `border: 2px solid ${color}; box-shadow: 0 0 8px ${color};` : ''}">
+                                <div class="item-icon">
+                                    <img src="${imgSrc}" alt="${s.name}" width="32" height="32">
+                                </div>
+                                <div class="item-details">
+                                    <div class="item-name">${s.name}</div>
+                                    <div class="item-quantity">Quantity: ${s.qty}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    seedCountEl.textContent = `${seedItems.length} items`;
+
+                    // ✅ Queue sounds sequentially on shop update
+                    if (isShopUpdate && !manualRefresh) {
+                        const emojis = seedItems.map(s => s.emoji);
+                        queueSoundsForItems(emojis);
+                        isShopUpdate = false;
+                    }
+                }
+
+                updateCountdown();
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('seed-items').innerHTML = '<div class="error">Failed to load stock.</div>';
+                document.getElementById('last-updated').textContent = 'Failed to load stock.';
+            }
+        }
+
+        // Initialize app
+        loadPreferences();
+        initializeSettings();
+        loadStock();
+
+        // Poll for updates every 10 seconds
+        setInterval(() => loadStock(false), 10000);
+
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
+
+        // Initial loading state
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('last-updated').textContent = 'Loading...';
+        });
     </script>
 </body>
 </html>
